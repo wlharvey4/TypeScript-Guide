@@ -1,0 +1,192 @@
+#+title:TypeScript Guide
+#+author:Pinecone062
+#+date:2019-08-13 11:53
+#+macro:version 0.0.1
+
+#+texinfo:@insertcopying
+
+* Source Installation and Update
+#+cindex:source
+#+cindex:installation
+#+cindex:updating
+
+** About TypeScript
+TypeScript is a superset of JavaScript that compiles to clean
+JavaScript output.
+
+- https://www.typescriptlang.org
+
+** Source
+TypeScript is being developed on GitHub and is open source.
+
+- https://github.com/Microsoft/TypeScript
+
+** Installation
+
+Installation is performed by Node:
+
+#+name:installation
+#+option: :results output :exports none
+#+begin_src sh :shebang "#!/usr/bin/env bash"
+yarn global add typescript
+#+end_src
+
+** Updating
+
+* Supplementary Programs
+:PROPERTIES:
+:appendix: t
+:END:
+
+** Tide for Emacs
+=Tide= --- TypeScript Interactive Development Environment for Emacs
+
+- https://github.com/ananthakumaran/tide
+
+*** Tide Installation
+- Install ~node.js v0.12.0~ or greater.
+
+- Make sure ~tsconfig.json~ or ~jsconfig.json~ is present in the root
+  folder of the project.
+
+- =Tide= is available in [[http://melpa.org/#/tide][melpa]].  You can install =tide= via
+  ~package-install M-x package-install [ret] tide~
+
+*** Tide Configuration
+
+#+begin_src emacs-lisp -n
+(defun setup-tide-mode ()
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  ;; company is an optional dependency. You have to
+  ;; install it separately via package-install
+  ;; `M-x package-install [ret] company`
+  (company-mode +1))
+
+;; aligns annotation to the right hand side
+(setq company-tooltip-align-annotations t)
+
+;; formats the buffer before saving
+(add-hook 'before-save-hook 'tide-format-before-save)
+
+(add-hook 'typescript-mode-hook #'setup-tide-mode)
+#+end_src
+
+*** Tide Format Options
+
+#+cindex:tide format options
+#+cindex:format options, tide
+Format options can be specified in multiple ways.
+
+{{{heading(via elisp)}}}
+
+#+findex:tide-format-options
+#+name:tide-format-options
+#+begin_src emacs-lisp
+(setq tide-format-options 
+      '(:insertSpaceAfterFunctionKeywordForAnonymousFunctions t
+        :placeOpenBraceOnNewLineForFunctions nil))
+#+end_src
+
+{{{heading(via tsfmt.json)}}}
+
+~tsfmt.json~ should be present in the root folder along with
+~tsconfig.json~
+
+#+pindex:@code{tsfmt.json}
+#+name:tsfmt.json
+#+begin_src js
+{
+  "indentSize": 4,
+  "tabSize": 4,
+  "insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": false,
+  "placeOpenBraceOnNewLineForFunctions": false,
+  "placeOpenBraceOnNewLineForControlBlocks": false
+}
+#+end_src
+
+** Makefile
+:PROPERTIES:
+:appendix: t
+:END:
+#+name:makefile
+#+begin_src makefile -n :tangle makefile
+SOURCE=TypeScript
+
+info:	$(SOURCE).texi
+	makeinfo $(SOURCE).texi
+
+pdf:	$(SOURCE).texi
+	pdftexi2dvi -q $(SOURCE).texi; \
+	open $(SOURCE).pdf
+
+clean-texi:
+	-rm *.texi
+clean-info:
+	-rm *.info
+clean-pdf:
+	-rm *.pdf
+clean-aux:
+	-rm *.{aux,toc,log,cp,cps,pg,pgs,fn,fns}
+
+clean: clean-texi clean-info clean-pdf clean-aux
+
+phony:clean-texi clean-info clean-pdf clean-aux clean
+#+end_src
+
+* Concept Index
+:PROPERTIES:
+:unnumbered: t
+:index:    cp
+:END:
+
+* Program Index
+:PROPERTIES:
+:index:    pg
+:unnumbered: t
+:END:
+
+* Function Index
+:PROPERTIES:
+:unnumbered: t
+:index:    fn
+:END:
+
+* Copying
+:PROPERTIES:
+:copying:  t
+:END:
+
+{{{noindent}}}\copy 2019 {{{author}}} {{{theVersion}}}
+
+* Macro Definitions                                                :noexport:
+
+#+macro:theVersion Version {{{version}}} {{{date}}}
+#+macro:noindent @@texinfo:@noindent @@
+#+macro:heading @@texinfo:@heading@@ $1
+#+macro:subheading @@texinfo:@@subheading@@ $1
+
+* Export Options                                                   :noexport:
+
+** Texinfo Export Options
+
+#+options: H:4
+#+texinfo_filename:typescript.info
+#+texinfo_class: info
+#+texinfo_header:
+#+texinfo_post_header:
+#+subtitle:{{{theVersion}}}
+#+subauthor:LOLH
+#+texinfo_dir_category:Languages
+#+texinfo_dir_title:TypeScript
+#+texinfo_dir_desc:How to program using TypeScript
+#+texinfo_printed_title:TypeScript Guide in Print
+
+* Local Variables                                                  :noexport:
+# Local Variables:
+# time-stamp-pattern:"8/^\\#\\+date:%:y-%02m-%02d %02H:%02M$"
+# End:
