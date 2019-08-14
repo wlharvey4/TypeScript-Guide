@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 10:40
-#+macro:version 0.0.8
+#+date:2019-08-14 10:48
+#+macro:version 0.0.9
 
 #+texinfo:@insertcopying
 
@@ -16,7 +16,7 @@ JavaScript output.
 
 - https://www.typescriptlang.org
 
-** Source
+** Source Code Repository
 TypeScript is being developed on GitHub and is open source.
 
 - https://github.com/Microsoft/TypeScript
@@ -31,7 +31,27 @@ Installation is performed by Node:
 yarn global add typescript
 #+end_src
 
-** Updating
+** Nightly Builds
+- [[http://www.typescriptlang.org/docs/handbook/nightly-builds.html][Nightly Builds home]]
+- The nightlies are available on [[https://www.myget.org/gallery/typescript-preview][www.myget.org]]
+
+There are two packages:
+
+- Microsoft.TypeScript.Compiler :: Tools only (~tsc.exe~, ~lib.d.ts~,
+     etc.)
+
+- Microsoft.TypeScript.MSBuild :: Tools as above, as well as MSBuild
+     tasks and targets (Microsoft.TypeScript.targets,
+     Microsoft.TypeScript.Default.props, etc.)
+
+
+{{{heading(Using npm)}}}
+
+A nightly build from the TypeScript’s master branch is published by
+midnight PST to NPM and NuGet.  Here is how you can get it and use it
+with your tools:
+
+: npm install -g typescript@next
 
 * Configuration and Compilation
 
@@ -730,7 +750,6 @@ module.exports = {
     }
 }
 #+end_src
-
 * Supplementary Programs
 :PROPERTIES:
 :appendix: t
