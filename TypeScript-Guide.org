@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 10:07
-#+macro:version 0.0.7
+#+date:2019-08-14 10:40
+#+macro:version 0.0.8
 
 #+texinfo:@insertcopying
 
@@ -588,6 +588,148 @@ There are also some flags specific to tsc -b:
 
 - --watch :: Watch mode (may not be combined with any flag except
              {{{option(--verbose)}}})
+
+** Integrating with Build Tools
+
+#+cindex:build tools
+*** Babel
+#+cindex:babel
+{{{heading(Install Babel)}}}
+
+: npm install @babel/cli @babel/core @babel/preset-typescript --save-dev
+
+#+cindex:@file{.babelrc}
+{{{heading(.babelrc File)}}}
+
+#+begin_src js
+{
+  "presets": ["@babel/preset-typescript"]
+}
+#+end_src
+
+{{{heading(Using Command Line Interface)}}}
+
+: ./node_modules/.bin/babel --out-file bundle.js src/index.ts
+
+{{{heading(package.json File)}}}
+
+#+begin_src js
+{
+  "scripts": {
+    "build": "babel --out-file bundle.js main.ts"
+  },
+}
+#+end_src
+
+{{{heading(Execute Babel from the command line)}}}
+
+: npm run build
+*** Browserify
+{{{heading(Install Browserify)}}}
+
+: npm install tsify
+
+See:
+- [[https://github.com/TypeStrong/tsify][tsify---Browsify plugin for TypeScript]]
+
+{{{heading(Using Command Line Interface)}}}
+
+: $ browserify main.ts -p [ tsify --noImplicitAny ] > bundle.js
+
+{{{heading(Using API)}}}
+
+#+begin_src js
+var browserify = require("browserify");
+var tsify = require("tsify");
+
+browserify()
+    .add("main.ts")
+    .plugin("tsify", { noImplicitAny: true })
+    .bundle()
+    .pipe(process.stdout);
+#+end_src
+*** Duo
+~due-typescript~: The typescript compiler plugin for ~duo~
+
+See:
+- [[https://github.com/frankwallis/duo-typescript][due-typescript]]
+*** Grunt
+TypeScript Compilation Task for GruntJS
+
+{{{heading(Install grunt-ts)}}}
+
+: npm install grunt-ts
+
+See:
+- [[https://github.com/TypeStrong/grunt-ts][grunt-ts]]
+
+{{{heading(Basic Gruntfile.js File)}}}
+
+#+begin_src js
+module.exports = function(grunt) {
+    grunt.initConfig({
+        ts: {
+            default : {
+                src: ["**/*.ts", "!node_modules/**/*.ts"]
+            }
+        }
+    });
+    grunt.loadNpmTasks("grunt-ts");
+    grunt.registerTask("default", ["ts"]);
+};
+#+end_src
+*** Gulp
+- [[https://github.com/ivogabe/gulp-typescript][gulp-typescript]] :: A gulp plugin for handling TypeScript compilation
+     workflow.
+
+{{{heading(Install gulp-typescript)}}}
+
+: npm install gulp-typescript
+
+{{{heading(Basic gulpfile.js)}}}
+
+#+begin_src js
+var gulp = require("gulp");
+var ts = require("gulp-typescript");
+
+gulp.task("default", function () {
+    var tsResult = gulp.src("src/*.ts")
+        .pipe(ts({
+              noImplicitAny: true,
+              out: "output.js"
+        }));
+    return tsResult.js.pipe(gulp.dest("built/local"));
+});
+#+end_src
+*** Jspm
+- [[https://github.com/Microsoft/TypeScriptSamples/tree/master/jspm][jspm]]
+*** Webpack
+- [[https://www.npmjs.com/package/ts-loader][ts-loader]] :: TypeScript loader for webpack
+
+{{{heading(Install ts-loader)}}}
+
+: npm install ts-loader --save-dev
+
+{{{heading(Basic webpack.config.js when using Webpack 2)}}}
+
+#+begin_src js
+module.exports = {
+    entry: "./src/index.tsx",
+    output: {
+        path: '/',
+        filename: "bundle.js"
+    },
+    resolve: {
+        extensions: [".tsx", ".ts", ".js", ".json"]
+    },
+    module: {
+        rules: [
+            // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
+            { test: /\.tsx?$/, use: ["ts-loader"], exclude: /node_modules/ }
+        ]
+    }
+}
+#+end_src
 
 * Supplementary Programs
 :PROPERTIES:
