@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 09:20
-#+macro:version 0.0.5
+#+date:2019-08-14 09:31
+#+macro:version 0.0.6
 
 #+texinfo:@insertcopying
 
@@ -36,20 +36,20 @@ yarn global add typescript
 * Configuration and Compilation
 
 ** The ~tsconfig~ File
+#+cindex:schema, @file{tsconfig.json}
+#+cindex:@file{tsconfig.json} schema
 Schema for the ~tsconfig.json~ file can be found at:
 - http://json.schemastore.org/tsconfig
 
 
-#+cindex:@code{tsconfig.json}
+#+cindex:@file{tsconfig.json} file
+#+cindex: configuration
+#+cindex:TypeScript project
 #+cindex:project, TypeScript
 #+cindex:root files, TypeScript project
 #+cindex:compiler options
 The presence of a ~tsconfig.json~ file in a directory indicates that
-the directory is the root of a TypeScript project.  A ~tsconfig.json~
-file is permitted to be completely empty, which compiles all files
-included by default with the default compiler options.  Compiler
-options specified on the command line override those specified in the
-~tsconfig.json~ file.
+the directory is the root of a TypeScript project.
 
 A ~tsconfig.json~ file specifies:
 
@@ -59,6 +59,11 @@ A ~tsconfig.json~ file specifies:
 
 {{{noindent}}}required to compile the project.
 
+A ~tsconfig.json~ file is permitted to be completely empty, which
+compiles all files included by default with the default compiler
+options.  Compiler options specified on the command line override
+those specified in the ~tsconfig.json~ file.
+
 *** The =compilerOptions= Property
 #+cindex:@code{compilerOptions} property
 #+cindex:default compiler options
@@ -66,11 +71,12 @@ A ~tsconfig.json~ file specifies:
 The =compilerOptions= property can be omitted, in which case the
 compiler’s defaults are used.
 
-**** Compiler Options
+**** List of Compiler Options
 For a complete list of compiler options, see:
 - http://www.typescriptlang.org/docs/handbook/compiler-options.html
 
 
+#+cindex:compiler options, list
 #+attr_texinfo: :indic code
 - --allowJs :: boolean =false=
 - --allowSyntheticDefaultImports :: boolean module === "system" or
@@ -164,8 +170,11 @@ For a complete list of compiler options, see:
 - --version -v :: [empty]
 - --watch -w :: [empty]
 
-*** Including and Excluding Files
+*** The =files= and =include= and =exclude= Properties
 
+#+cindex:@code{files} property
+#+cindex:@code{include} property
+#+cindex:@code{exclude} property
 Files and can included or excluded from a project by using a
 combination of the =files=, the =include=, and the =exclude=
 properties, and the =outDir= compiler option in the ~tsconfig.json~
@@ -206,6 +215,8 @@ The =files= property takes a list of relative or absolute file paths.
 **** The =include= and =exclude= Properties
 #+cindex:@code{include} property
 #+cindex:@code{exclude} property
+#+cindex:glob patterns
+#+cindex:wildcards, glob
 The =include= and =exclude= properties take a list of glob-like file
 patterns.  The supported glob wildcards are:
 
@@ -233,6 +244,10 @@ patterns.  The supported glob wildcards are:
 - =**/= :: recursively matches any subdirectory
 
 
+#+cindex:@file{node_modules}
+#+cindex:@file{bower_components}
+#+cindex:@file{jspm_packages}
+#+cindex:@code{outDir} property
 =exclude= by default excludes the following directories:
 
 - ~node_modules~
