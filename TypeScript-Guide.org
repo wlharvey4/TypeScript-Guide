@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 09:31
-#+macro:version 0.0.6
+#+date:2019-08-14 10:07
+#+macro:version 0.0.7
 
 #+texinfo:@insertcopying
 
@@ -455,6 +455,139 @@ A project is compiled:
 
 - By invoking {{{command(tsc)}}} with input files on the command line,
   in which case a ~tsconfig.json~ files are ignored.
+
+** Project References
+- http://www.typescriptlang.org/docs/handbook/project-references.html
+
+
+#+cindex:project reference
+/Project references/ are a new feature in TypeScript 3.0 that allow
+you to structure your TypeScript programs into smaller pieces.  By
+doing this, you can:
+
+- greatly improve build times
+- enforce logical separation between components
+- organize your code in new and better ways
+
+
+There is also a new mode for {{{command(tsc)}}}, the
+{{{option(--build)}}} flag that works hand in hand with project
+references to enable faster TypeScript builds.
+
+*** The =references= Property
+~tsconfig.json~ files have a new top-level property, =references=.
+It’s an array of objects that specifies projects to reference:
+
+#+name:tsconfig-with-references
+#+begin_src js
+{
+    "compilerOptions": {
+        // The usual
+    },
+    "references": [
+        { "path": "../src" }
+    ]
+}
+#+end_src
+
+The =path= property of each reference can point to a directory
+containing a ~tsconfig.json~ file, or to the config file itself (which
+may have any name).
+
+When you reference a project, new things happen:
+
+- Importing modules from a referenced project will instead load its
+  output declaration file (~.d.ts~)
+
+- If the referenced project produces an =outFile=, the output file
+  ~.d.ts~ file’s declarations will be visible in this project
+
+- Build mode (see below) will automatically build the referenced
+  project if needed
+
+
+By separating into multiple projects, you can greatly improve the
+speed of typechecking and compiling, reduce memory usage when using an
+editor, and improve enforcement of the logical groupings of your
+program
+
+*** The =composite= Property
+Referenced projects must have the new =composite= setting enabled.
+This setting is needed to ensure TypeScript can quickly determine
+where to find the outputs of the referenced project.
+
+Enabling the composite flag changes a few things:
+
+- The =rootDir= setting, if not explicitly set, defaults to the
+  directory containing the ~tsconfig~ file
+
+- All implementation files must be matched by an =include= pattern or
+  listed in the files array.  If this constraint is violated, ~tsc~
+  will inform you which files weren’t specified
+
+- =declaration= must be turned on
+
+*** The =prepend= Property
+You can also enable prepending the output of a dependency using the
+=prepend= option in a reference:
+
+#+name:tsconfig-using-prepend
+#+begin_src js
+"references": [
+       { "path": "../utils", "prepend": true }
+   ]
+#+end_src
+
+Prepending a project will include the project’s output above the
+output of the current project.  This works for both ~.js~ files and
+~.d.ts~ files, and source map files will also be emitted correctly.
+
+*** Build Mode
+To preserve compatibility with existing build workflows, ~tsc~ will
+not automatically build dependencies unless invoked with the
+{{{option(--build)}}} switch.
+
+A long-awaited feature is /smart incremental builds/ for TypeScript
+projects.  In 3.0 you can use the {{{option(--build)}}} flag with
+~tsc~.  This is effectively a new entry point for ~tsc~ that behaves
+more like a build orchestrator than a simple compiler.
+
+Running ~tsc --build~ (~tsc -b~ for short) will do the following:
+
+- Find all referenced projects
+
+- Detect if they are up-to-date
+
+- Build out-of-date projects in the correct order
+
+
+You can provide ~tsc -b~ with multiple config file paths (e.g. ~tsc -b
+src test~).  Specifying the config file name itself is unnecessary if
+it’s named ~tsconfig.json~.
+
+You can specify any number of config files:
+
+#+begin_example
+> tsc -b                            # Use the tsconfig.json in the current directory
+> tsc -b src                        # Use src/tsconfig.json
+> tsc -b foo/prd.tsconfig.json bar  # Use foo/prd.tsconfig.json and bar/tsconfig.json
+#+end_example
+
+There are also some flags specific to tsc -b:
+
+#+attr_texinfo: :indic option
+- --verbose :: Prints out verbose logging to explain what’s going on
+               (may be combined with any other flag)
+
+- --dry :: Shows what would be done but doesn’t actually build anything
+
+- --clean :: Deletes the outputs of the specified projects (may be
+             combined with {{{option(--dry)}}})
+
+- --force :: Act as if all projects are out of date
+
+- --watch :: Watch mode (may not be combined with any flag except
+             {{{option(--verbose)}}})
 
 * Supplementary Programs
 :PROPERTIES:
