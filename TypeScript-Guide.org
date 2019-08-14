@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 07:06
-#+macro:version 0.0.4
+#+date:2019-08-14 09:20
+#+macro:version 0.0.5
 
 #+texinfo:@insertcopying
 
@@ -65,6 +65,104 @@ A ~tsconfig.json~ file specifies:
 #+cindex:compiler options, defaults
 The =compilerOptions= property can be omitted, in which case the
 compiler’s defaults are used.
+
+**** Compiler Options
+For a complete list of compiler options, see:
+- http://www.typescriptlang.org/docs/handbook/compiler-options.html
+
+
+#+attr_texinfo: :indic code
+- --allowJs :: boolean =false=
+- --allowSyntheticDefaultImports :: boolean module === "system" or
+     --esModuleInterop
+- --allowUmdGlobalAccess :: boolean =false=
+- --allowUnreachableCode :: boolean =false=
+- --allowUnusedLabels :: boolean =false=
+- --alwaysStrict :: boolean false
+- --baseUrl :: string; See [[http://www.typescriptlang.org/docs/handbook/module-resolution.html#base-url][Module Resolution documentation]]
+- --build -b :: boolean =false=
+- --charset :: string "utf8"
+- --checkJs :: boolean =false=
+- --composite :: boolean =true=
+- --declaration -d :: boolean =false=
+- --declarationDir :: string
+- --declarationMap :: boolean =false=
+- --diagnostics :: boolean =false=
+- --disableSizeLimit :: boolean =false=
+- --downlevelIteration :: boolean =false=
+- --emitBOM :: boolean =false=
+- --emitDeclarationOnly :: boolean =false=
+- --emitDecoratorMetadata :: boolean =false=
+- --esModuleInterop :: boolean =false=
+- --experimentalDecorators :: boolean =false=
+- --extendedDiagnostics :: boolean =false=
+- --forceConsistentCasingInFileNames :: boolean =false=
+- --help -h :: empty
+- --importHelpers :: boolean =false=
+- --incremental :: boolean =true= if composite; =false= otherwise
+- --inlineSourceMap :: boolean =false=
+- --inlineSources :: boolean =false=
+- --init :: empty
+- --isolatedModules :: boolean =false=
+- --jsx :: string "preserve" | "react" | "react-native"
+- --jsxFactory :: string "React.createElement" | "h"
+- --keyofStringsOnly :: boolean =false=
+- --lib :: string[] [default list of libraries are injected]
+- --listEmittedFiles :: boolean =false=
+- --listFiles :: boolean =false=
+- --locale :: string "en"
+- --mapRoot :: string
+- --maxNodeModuleJsDepth :: number 0
+- --module -m :: string target === "ES3" or "ES5" ? "CommonJS" : "ES6"
+- --moduleResolution :: string module === "AMD" or "System" or "ES6" ?
+     "Classic" : "Node"
+- --newLine :: string "lf"
+- --noEmit :: boolean =false=
+- --noEmitHelpers :: boolean =false=
+- --noEmitOnError :: boolean =false=
+- --noErrorTruncation :: boolean =false=
+- --noFallthroughCasesInSwitch :: boolean =false=
+- --noImplicitAny :: boolean =false=
+- --noImplicitReturns :: boolean =false=
+- --noImplicitThis :: boolean =false=
+- --noImplicitUseStrict :: boolean =false=
+- --noLib :: boolean =false=
+- --noResolve :: boolean =false=
+- --noStrictGenericChecks :: boolean =false=
+- --noUnusedLocals :: boolean =false=
+- --noUnusedParameters :: boolean =false=
+- --outDir :: string
+- --outFile :: string
+- paths :: Object
+- --preserveConstEnums :: boolean =false=
+- --preserveSymlinks :: boolean =false=
+- --preserveWatchOutput :: boolean =false=
+- --pretty :: boolean =true= unless piping or redirecting
+- --project -p :: string
+- --reactNamespace :: deprecated; use {{{option(--jsxFactory)}}}
+- --removeComments :: boolean =false=
+- --resolveJsonModule :: boolean =false=
+- --rootDir :: string [computed from input files]
+- rootDirs :: string[]
+- --showConfig :: boolean =false=
+- --skipDefaultLibCheck :: boolean =false=
+- --skipLibCheck :: boolean =false=
+- --sourceMap :: boolean =false=
+- --sourceRoot :: string
+- --strict :: boolean =false=
+- --strictBindCallApply :: boolean =false=
+- --strictFunctionTypes :: boolean =false=
+- --strictPropertyInitialization :: boolean =false=
+- --strictNullChecks :: boolean =false=
+- --suppressExcessPropertyErrors :: boolean =false=
+- --suppressImplicitAnyIndexErrors :: boolean =false=
+- --target -t :: string "ES3"
+- --traceResolution :: boolean =false=
+- --tsBuildInfoFile :: boolean =false=
+- --types :: string[]
+- --typeRoots :: string[]
+- --version -v :: [empty]
+- --watch -w :: [empty]
 
 *** Including and Excluding Files
 
