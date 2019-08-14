@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-13 18:27
-#+macro:version 0.0.2
+#+date:2019-08-13 19:20
+#+macro:version 0.0.3
 
 #+texinfo:@insertcopying
 
@@ -41,7 +41,11 @@ yarn global add typescript
 #+cindex:root files, TypeScript project
 #+cindex:compiler options
 The presence of a ~tsconfig.json~ file in a directory indicates that
-the directory is the root of a TypeScript project.
+the directory is the root of a TypeScript project.  A ~tsconfig.json~
+file is permitted to be completely empty, which compiles all files
+included by default with the default compiler options.  Compiler
+options specified on the command line override those specified in the
+~tsconfig.json~ file.
 
 A ~tsconfig.json~ file specifies:
 
@@ -127,9 +131,120 @@ patterns.  The supported glob wildcards are:
 - =*= :: matches zero or more characters (excluding directory
          separators)
 
+         If a segment of a glob pattern includes only =*= or =.*=,
+         then only files with supported extensions are included.
+         Supported extensions include:
+
+  - =.ts=
+
+  - =.tsx=
+
+  - =.d.ts=
+
+    If =allowJs= is set to =true=:
+
+  - =.js=
+
+  - =.jsx=
+
 - =?= :: matches any one character (excluding directory separators)
 
 - =**/= :: recursively matches any subdirectory
+
+
+Any files that are referenced via the =files= or =include= properties
+are included.  Files included using =include= can be filtered using
+the =exclude= property, but files included explicitly using the
+=files= property are always included regardless of =exclude=.  Files
+in the directory specified using the =outDir= compiler option are
+excluded as long as =exclude= property is /not/ specified.
+
+
+=exclude= by default excludes the following directories:
+
+- ~node_modules~
+- ~bower_components~
+- ~jspm_packages~
+- =outDir=
+
+
+If a file ~B.ts~ is referenced by another file ~A.ts~, then ~B.ts~
+cannot be excluded unless the referencing file ~A.ts~ is also
+specified in the =exclude= list.  The compiler does not include files
+that can be possible outputs; e.g. if the input includes ~index.ts~,
+then ~index.d.ts~ and ~index.js~ are excluded.
+
+*** Neither =files= nor =include= Properties
+If the "files" and "include" are both left unspecified, the compiler
+defaults to including all TypeScript files in the containing directory
+and subdirectories except those excluded using the "exclude" property.
+(See above for default extensions.)  JS files (see above) are also
+included if =allowJs= is set to =true=.
+
+If the "files" and/or "include" properties are specified, the compiler
+will instead include the union of the files included by those two
+properties.
+
+*** Including and Excluding Types Packages
+
+#+cindex:types package
+#+cindex:@file{index.d.ts} file
+#+cindex:@code{types} field
+A /types package/ is a folder with a file called ~index.d.ts~ or a
+folder with a ~package.json~ that has a =types= field.
+
+{{{subheading(Include @types Packages)}}}
+
+#+cindex:@code{@@types} packages
+By default all visible =@@types= packages are included in your
+compilation.  Packages in ~node_modules/@types~ of any enclosing
+folder are considered visible.  That means packages within the
+following directores are visible:
+
+- ~./node_modules/@types/~
+- ~../node_modules/@types/~
+- ~../../node_modules/@types/~
+
+
+Automatic inclusion is only important if you’re using files with
+global declarations (as opposed to files declared as modules).  If you
+use an =import "foo"= statement, for instance, TypeScript may still
+look through ~node_modules~ and ~node_modules/@types~ folders to find
+the ~foo~ package.
+
+{{{subheading(Exclude @types Packages)}}}
+
+Specify ="types": []= to disable automatic inclusion of =@types=
+packages.
+
+{{{heading(typeRoots)}}}
+
+If =typeRoots= is specified, only packages under =typeRoots= will be
+included.  This config file will include all packages under
+~./typings~, and no packages from ~./node_modules/@types~.
+
+#+begin_src js
+{
+   "compilerOptions": {
+       "typeRoots" : ["./typings"]
+   }
+}
+#+end_src
+
+{{{heading(types)}}}
+
+If types is specified, only packages listed will be included.  This
+~tsconfig.json~ file will only include ~./node_modules/@types/node~,
+~./node_modules/@types/lodash~ and ~./node_modules/@types/express~.
+Other packages under ~node_modules/@types/*~ will not be included.
+
+#+begin_src js
+{
+   "compilerOptions": {
+       "types" : ["node", "lodash", "express"]
+   }
+}
+#+end_src
 
 ** Compilation of a TypeScript Project
 
