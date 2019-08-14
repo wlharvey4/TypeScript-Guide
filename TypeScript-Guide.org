@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 10:48
-#+macro:version 0.0.9
+#+date:2019-08-14 14:44
+#+macro:version 0.0.10
 
 #+texinfo:@insertcopying
 
@@ -750,6 +750,281 @@ module.exports = {
     }
 }
 #+end_src
+* Types
+#+cindex:types
+** Boolean
+#+cindex:boolean type
+- =true=
+- =false=
+
+
+: let isDone: boolean = false;
+
+** Number
+#+cindex:number type
+All numbers are floating-point values; numbers include binary, octal,
+hexadecimal and decimal literals.
+
+: let decimal: number = 6;
+: let hex: number = 0xf00d;
+: let binary: number = 0b1010;
+: let octal: number = 0o744;
+
+** String
+#+cindex:string type
+The type =string= refers to the textual datatype.  TypeScript uses
+either double quotes or single quotes to surround string data.
+
+: let color: string = "blue";
+: color = 'red';
+
+{{{heading(Template Strings)}}}
+
+Template strings are strings surrounded by the backtick or backquote
+character (=`=); template strings can span multiple lines and allow
+embedded expressions using the syntax =${ expr }=.
+
+: let sentence: string = `Hello, my name is ${ fullName }.`
+
+** Array
+#+cindex:array type
+Array types can be written in one of two ways.
+
+In the first, you use the type of the elements followed by =[]= to
+denote an array of that element type:
+
+: let list: number[] = [1, 2, 3];
+
+The second way uses a generic array type, =Array<elemType>=:
+
+: let list: Array<number> = [1, 2, 3];
+
+** Tuple
+#+cindex:tuple type
+Tuple types allow you to express an array with a fixed number of
+elements whose types are known, but need not be the same.
+
+To represent a value as a pair of a string and a number:
+
+#+begin_src js
+// Declare a tuple type
+let x: [string, number];
+// Initialize it
+x = ["hello", 10]; // OK
+// Initialize it incorrectly
+x = [10, "hello"]; // Error
+#+end_src
+
+When accessing an element with a known index, the correct type is
+retrieved:
+
+: console.log(x[0].substring(1)); // OK
+
+** Enum
+#+cindex:enum type
+An enum is a way of giving more friendly names to sets of numeric
+values.
+
+#+begin_src js
+enum Color {Red, Green, Blue}
+let c: Color = Color.Green;
+#+end_src
+
+{{{heading(Enum Numbering)}}}
+
+By default, enums begin numbering their members starting at 0.  You
+can change this by manually setting the value of one of its members.
+For example, we can start the previous example at 1 instead of 0:
+
+#+begin_src js
+enum Color {Red = 1, Green, Blue}
+let c: Color = Color.Green;
+#+end_src
+
+{{{subheading(Manual Enum Numbering)}}}
+
+Or, even manually set all the values in the enum:
+
+#+begin_src js
+enum Color {Red = 1, Green = 2, Blue = 4}
+let c: Color = Color.Green;
+#+end_src
+
+{{{subheading(Enum Values to Name)}}}
+
+A handy feature of enums is that you can also go from a numeric value
+to the name of that value in the enum.  For example, if we had the
+value 2 but weren’t sure what that mapped to in the Color enum above,
+we could look up the corresponding name:
+
+#+begin_src js
+enum Color {Red = 1, Green, Blue}
+let colorName: string = Color[2];
+
+console.log(colorName); // Displays 'Green' as its value is 2 above
+#+end_src
+
+** Any
+#+cindex:any type
+We may need to describe the type of variables that we do not know when
+we are writing an application.  These values may come from dynamic
+content, e.g. from the user or a 3rd party library.  In these cases,
+we want to opt-out of type checking and let the values pass through
+compile-time checks.  To do so, we label these with the =any= type:
+
+#+begin_src js
+let notSure: any = 4;
+notSure = "maybe a string instead";
+notSure = false; // okay, definitely a boolean
+#+end_src
+
+{{{heading(Objects and Type =any=)}}}
+
+Variables of type =Object= only allow you to assign =any= value to
+them.  You can’t call arbitrary methods on them, even ones that
+actually exist:
+
+#+begin_src js
+let notSure: any = 4;
+notSure.ifItExists(); // okay, ifItExists might exist at runtime
+notSure.toFixed(); // okay, toFixed exists (but the compiler doesn't check)
+
+let prettySure: Object = 4;
+prettySure.toFixed(); // Error: Property 'toFixed' doesn't exist on type 'Object'.
+#+end_src
+
+The =any= type is also handy if you know some part of the type, but
+perhaps not all of it.  For example, you may have an array but the
+array has a mix of different types:
+
+#+begin_src js
+let list: any[] = [1, true, "free"];
+
+list[1] = 100;
+#+end_src
+
+** Void
+#+cindex:void type
+The =void= type denotes the absence of having any type at all.  You
+may commonly see this as the return type of functions that do not
+return a value:
+
+#+begin_src js
+function warnUser(): void {
+    console.log("This is my warning message");
+}
+#+end_src
+
+Declaring variables of type =void= is not useful because you can only
+assign =undefined= or =null= to them.
+
+** Null
+#+cindex:null type
+The type =null= is the only value of this type.  It is a subtype of
+all other types, though, which means you can assign =null= to any
+other type, unless {{{option(--strictNullChecks)}}} is used, in which
+case =null= can only be assigned to an =any= type.
+
+** Undefined
+#+cindex:undefined type
+The type =undefined= is the only value of this type.  It is a subtype
+of all other types as is =null=.  When
+{{{option(--stringNullChecks)}}} is used, =undefined= can be assigned
+to a type of =any= and =void=.
+
+** Union Type
+#+cindex:union type
+In cases where you want to pass in either a =string= or =null= or
+=undefined=, you can use the =union= type =string | null | undefined=.
+
+** Never
+#+cindex:never type
+The =never= type represents the type of values that never occur.  For
+instance, =never= is the return type for a function expression or an
+arrow function expression that always throws an exception or one that
+never returns.  Variables also acquire the type =never= when narrowed by
+any type guards that can never be true.
+
+The =never= type is a subtype of, and assignable to, every type;
+however, no type is a subtype of, or assignable to, =never= (including
+=any=).
+
+Some examples of functions returning never:
+
+#+begin_src js
+// Function returning never must have unreachable end point
+function error(message: string): never {
+    throw new Error(message);
+}
+
+// Inferred return type is never
+function fail() {
+    return error("Something failed");
+}
+
+// Function returning never must have unreachable end point
+function infiniteLoop(): never {
+    while (true) {
+    }
+}
+#+end_src
+
+** Object
+#+cindex:object type
+The =object= is a type that represents the non-primitive type,
+i.e. anything that is not =number=, =string=, =boolean=, =symbol=,
+=null=, or =undefined=.
+
+With object type, APIs like ~Object.create~ can be better
+represented.  For example:
+
+#+begin_src js
+declare function create(o: object | null): void;
+
+create({ prop: 0 }); // OK
+create(null); // OK
+
+create(42); // Error
+create("string"); // Error
+create(false); // Error
+create(undefined); // Error
+#+end_src
+
+** Type Assertions
+#+cindex:type assertions
+Sometimes you’ll end up in a situation where you’ll know more about a
+value than TypeScript does. Usually this will happen when you know the
+type of some entity could be more specific than its current type.
+
+/Type assertions/ are a way to tell the compiler “trust me, I know
+what I’m doing.”  A type assertion is like a type cast in other
+languages, but performs no special checking or restructuring of data.
+It has no runtime impact, and is used purely by the compiler.
+TypeScript assumes that you, the programmer, have performed any
+special checks that you need.
+
+Type assertions have two forms (that is, the forms are equivalent
+symantically).
+
+1. the “angle-bracket” syntax:
+
+#+begin_src js
+let someValue: any = "this is a string";
+
+let strLength: number = (<string>someValue).length;
+#+end_src
+
+2. the other is the as-syntax:
+
+#+begin_src js
+let someValue: any = "this is a string";
+
+let strLength: number = (someValue as string).length;
+#+end_src
+
+When using TypeScript with JSX, only =as=-style assertions are
+allowed.
+
 * Supplementary Programs
 :PROPERTIES:
 :appendix: t
