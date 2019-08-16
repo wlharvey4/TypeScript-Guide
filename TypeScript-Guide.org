@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-15 19:51
-#+macro:version 0.0.11
+#+date:2019-08-16 07:55
+#+macro:version 0.0.12
 
 #+texinfo:@insertcopying
 
@@ -1093,13 +1093,136 @@ later.
 ** Let
 #+cindex:lexical scope
 #+cindex:block scope
+#+cindex:local variable
+The =let= statement declares a block scope local variable, optionally
+initializing it to a value.  The other difference between =var= and
+=let= is that the latter is initialized to value only when parser
+evaluates it.  The =let= does not create properties of the window
+object when declared globally.  The main difference between =var= and
+=let= is that the scope of a =var= variable is the entire enclosing
+function.
+
+#+begin_src js
+var x = 'global';
+let y = 'global';
+console.log(this.x); // "global"
+console.log(this.y); // undefined
+#+end_src
+
 When a variable is declared using ~let~, it uses what some call
 lexical-scoping or block-scoping.  Unlike variables declared with
 ~var~, whose scopes leak out to their containing function,
 block-scoped variables are not visible outside of their nearest
 containing block or =for-loop=.
 
+#+cindex:temporal dead zone
+Another property of block-scoped variables is that they can’t be read
+or written to before they’re actually declared.  While these variables
+are “present” throughout their scope, all points up until their
+declaration are part of their temporal dead zone.  This is just a
+sophisticated way of saying you can’t access them before the ~let~
+statement, and luckily TypeScript will let you know that.
+
+You can still capture a block-scoped variable before it’s declared.
+The only catch is that it’s illegal to call that function before the
+declaration.  If targeting ES2015, a modern runtime will throw an
+error; however, right now TypeScript is permissive and won’t report
+this as an error.
+
+#+begin_src js
+function foo() {
+    // okay to capture 'a'
+    return a;
+}
+
+// illegal call 'foo' before 'a' is declared
+// runtimes should throw an error here
+foo();
+
+let a;
+#+end_src
+
+*** Emulate Private Members
+#+cindex:private member
+In dealing with constructors it is possible to use the ~let~ bindings
+to share one or more private members without using closures:
+
+#+caption:Emulate private members using let
+#+name:emulate-private-members-using-let
+#+begin_src js -n
+var Thing;
+
+{ // BLOCK SCOPE
+  let privateScope = new WeakMap(); // PRIVATE MEMBERS
+  let counter = 0;
+
+  Thing = function() {
+    this.someProperty = 'foo';
+
+    privateScope.set(this, {
+      hidden: ++counter,
+    });
+  };
+
+  Thing.prototype.showPublic = function() {
+    return this.someProperty;
+  };
+
+  Thing.prototype.showPrivate = function() {
+    return privateScope.get(this).hidden;
+  };
+}
+
+console.log(typeof privateScope); // "undefined"
+
+var thing = new Thing();
+
+console.log(thing); // Thing {someProperty: "foo"}
+
+thing.showPublic(); // "foo"
+
+thing.showPrivate(); // 1
+#+end_src
+
+The same privacy pattern with closures over local variables can be
+created with ~var~, but those need a function scope (typically an IIFE
+in the module pattern) instead of just a block scope like in the
+example above.
+
+*** Temporal Dead Zone
+Unlike variables declared with ~var~, which will start with the value
+undefined, ~let~ variables are not initialized until their definition
+is evaluated.  Accessing the variable before the initialization
+results in a =ReferenceError=.  The variable is in a "temporal dead
+zone" from the start of the block until the initialization is
+processed.
+
+Unlike with simply undeclared variables and variables that hold a
+value of =undefined=, using the ~typeof~ operator to check for the
+type of a variable in that variable's TDZ will throw a
+=ReferenceError=:
+
 ** Const
+~const~ declarations are another way of declaring variables.  They are
+like ~let~ declarations but, as their name implies, their value cannot
+be changed once they are bound.  In other words, they have the same
+scoping rules as ~let~, but you can’t re-assign to them.  This should
+not be confused with the idea that the values they refer to are
+immutable.  Unless you take specific measures to avoid it, the
+internal state of a ~const~ variable is still modifiable.
+Fortunately, TypeScript allows you to specify that members of an
+object are =readonly=
+
+{{{heading(Principle of Least Privilege)}}}
+
+#+cindex:least privilege
+Applying the principle of /least privilege/, all declarations other
+than those you plan to modify should use ~const~.  The rationale is
+that if a variable didn’t need to get written to, others working on
+the same codebase shouldn’t automatically be able to write to the
+object, and will need to consider whether they really need to reassign
+to the variable.  Using ~const~ also makes code more predictable when
+reasoning about flow of data.
 
 * Supplementary Programs
 :PROPERTIES:
