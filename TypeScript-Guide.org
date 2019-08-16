@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-16 14:35
-#+macro:version 0.0.20
+#+date:2019-08-16 14:43
+#+macro:version 0.0.21
 
 #+texinfo:@insertcopying
 
@@ -752,9 +752,9 @@ module.exports = {
 ** An Example
 In your editor, type the following JavaScript code in ~greeter.ts~:
 
-#+name:greater.ts
+#+name:greater0.ts
 #+header: :mkdirp yes
-#+begin_src js :tangle examples/greeter.ts
+#+begin_src js :tangle examples/greeter0.ts
 function greeter(person) {
     return "Hello, " + person;
 }
@@ -771,13 +771,13 @@ have copy/pasted this straight out of an existing JavaScript app.
 
 At the command line, run the TypeScript compiler:
 
-#+name:compile-greeter.ts
+#+name:compile-greeter0.ts
 #+header: :results output :exports both :dir examples
 #+begin_src sh
-tsc greeter.ts
+tsc greeter0.ts
 #+end_src
 
-The result will be a file ~greeter.js~ which contains the same
+The result will be a file ~greeter0.js~ which contains the same
 JavaScript that you fed in.  We’re up and running using TypeScript in
 our JavaScript app!
 
@@ -785,8 +785,8 @@ Now we can start taking advantage of some of the new tools TypeScript
 offers.  Add a =: string= type annotation to the ‘person’ function
 argument as shown here:
 
-#+name:greeter2.ts
-#+begin_src js :tangle examples/greeter2.ts
+#+name:greeter1.ts
+#+begin_src js :tangle examples/greeter1.ts
 function greeter(person: string) {
     return "Hello, " + person;
 }
@@ -798,7 +798,7 @@ document.body.textContent = greeter(user);
 
 #+name:compile-greet2.ts
 #+begin_src sh :results output :exports both :dir examples
-tsc greeter2.ts
+tsc greeter1.ts
 #+end_src
 
 *** Type Annotations
@@ -810,7 +810,7 @@ parameter.  We can try changing the call ~greeter~ to pass an array
 instead:
 
 #+name:greeter-wrong.ts
-#+begin_src js :tangle examples/greeter-wrong.ts
+#+begin_src js :tangle examples/greeter-error.ts
 function greeter(person: string) {
     return "Hello, " + person;
 }
@@ -822,7 +822,7 @@ document.body.textContent = greeter(user);
 
 Re-compiling, you’ll now see an error:
 
-#+name:compile-greeter-wrong.ts
+#+name:compile-greeter-error.ts
 #+begin_src sh :results output :exports both :dir examples
 tsc greet-wrong.ts
 #+end_src
@@ -919,6 +919,7 @@ JavaScript.
 *** Running your TypeScript Web App
 Now type the following in ~greeter.html~:
 
+#+name:greeter.html
 #+begin_src html :tangle examples/greeter.html
 <!DOCTYPE html>
 <html>
@@ -4106,7 +4107,6 @@ to an npm package, and shows how to manage your dependent packages.
 
 For JavaScript library users, the Consumption section offers a few
 simple steps to locate and install corresponding declaration files.
-
 
 
 * Supplementary Programs
