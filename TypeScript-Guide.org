@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-14 14:44
-#+macro:version 0.0.10
+#+date:2019-08-15 19:51
+#+macro:version 0.0.11
 
 #+texinfo:@insertcopying
 
@@ -1024,6 +1024,82 @@ let strLength: number = (someValue as string).length;
 
 When using TypeScript with JSX, only =as=-style assertions are
 allowed.
+* Variables
+** Var
+*** Var Scoping Rules
+{{{heading(Function Scope)}}}
+
+#+cindex:function scope
+#+cindex:@code{var} declaration
+=var= declarations are accessible anywhere within their containing
+function, module, namespace, or global scope regardless of the
+containing block.  Parameters are also function scoped.
+
+{{{subheading(Problems with Function Scope)}}}
+
+One problem they exacerbate is the fact that it is not an error to
+declare the same variable multiple times.  Variables can be
+accidentally overwritten this way.
+
+This also occurs within for-loops:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    setTimeout(function() { console.log(i); }, 100 * i);
+}
+#+end_src
+
+{{{noindent}}}which produces the following output:
+
+#+begin_example
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+#+end_example
+
+~setTimeout~ will run a function after some number of milliseconds,
+but only after the for loop has stopped executing; by the time the for
+loop has stopped executing, the value of ~i~ is 10.  So each time the
+given function gets called, it will print out 10!
+
+#+cindex:IIFE
+#+cindex:immediately invoked function expression
+A common work around is to use an IIFE - an Immediately Invoked
+Function Expression - to capture ~i~ at each iteration:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    // capture the current state of 'i'
+    // by invoking a function with its current value
+    (function(i) {
+        setTimeout(function() { console.log(i); }, 100 * i);
+    })(i);
+}
+#+end_src
+
+The ~i~ in the parameter list actually shadows the ~i~ declared in the
+for loop, and which is used to invoke the function.  The function
+closes over the value of the parameter ~i~ when it is invoked, and
+will be available to the ~setTimeout~ function when it runs much
+later.
+
+** Let
+#+cindex:lexical scope
+#+cindex:block scope
+When a variable is declared using ~let~, it uses what some call
+lexical-scoping or block-scoping.  Unlike variables declared with
+~var~, whose scopes leak out to their containing function,
+block-scoped variables are not visible outside of their nearest
+containing block or =for-loop=.
+
+** Const
 
 * Supplementary Programs
 :PROPERTIES:
