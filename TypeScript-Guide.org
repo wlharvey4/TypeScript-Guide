@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-16 07:55
-#+macro:version 0.0.12
+#+date:2019-08-16 08:28
+#+macro:version 0.0.13
 
 #+texinfo:@insertcopying
 
@@ -1223,7 +1223,261 @@ the same codebase shouldn’t automatically be able to write to the
 object, and will need to consider whether they really need to reassign
 to the variable.  Using ~const~ also makes code more predictable when
 reasoning about flow of data.
+** Destructuring
+*** Array Destructuring
+#+cindex:destructuring
+#+cindex:array destructuring
+The simplest form of destructuring is array destructuring assignment:
 
+#+begin_src js
+let input = [1, 2];
+let [first, second] = input; // first := 1, second := 2
+#+end_src
+
+This creates two new variables named first and second.  This is
+equivalent to using indexing, but is much more convenient:
+
+#+begin_src js
+first = input[0];
+second = input[1];
+#+end_src
+
+Destructuring works with already-declared variables as well:
+
+#+begin_src js
+// swap variables
+[first, second] = [second, first];
+#+end_src
+
+And with parameters to a function:
+
+#+begin_src js
+function f([first, second]: [number, number]) {
+    console.log(first);
+    console.log(second);
+}
+f([1, 2]);
+#+end_src
+
+You can create a variable for the remaining items in a list using the
+syntax ...:
+
+#+begin_src js
+let [first, ...rest] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+console.log(rest); // outputs [ 2, 3, 4 ]
+#+end_src
+
+Of course, since this is JavaScript, you can just ignore trailing
+elements you don’t care about:
+
+#+begin_src js
+let [first] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+#+end_src
+
+Or other elements:
+
+#+begin_src js
+let [, second, , fourth] = [1, 2, 3, 4];
+console.log(second); // outputs 2
+console.log(fourth); // outputs 4
+#+end_src
+
+*** Tuple Destructuring
+#+cindex:destructuring
+#+cindex:tuple destructuring
+Tuples may be destructured like arrays; the destructuring variables
+get the types of the corresponding tuple elements:
+
+#+begin_src js
+let tuple: [number, string, boolean] = [7, "hello", true];
+
+let [a, b, c] = tuple; // a: number, b: string, c: boolean
+#+end_src
+
+It’s an error to destructure a tuple beyond the range of its elements.
+As with arrays, you can destructure the rest of the tuple with ..., to
+get a shorter tuple; and ignore trailing elements, or other elements.
+
+*** Object Destructuring
+#+cindex:destructuing
+#+cindex:object destructuring
+You can also destructure objects:
+
+#+begin_src js
+let o = {
+    a: "foo",
+    b: 12,
+    c: "bar"
+};
+Let { a, b } = o;
+#+end_src
+
+This creates new variables ~a~ and ~b~ from ~o.a~ and ~o.b~.  Notice
+that you can skip ~c~ if you don’t need it.
+
+Like array destructuring, you can have assignment without declaration:
+
+#+begin_src js
+({ a, b } = { a: "baz", b: 101 });
+#+end_src
+
+Notice that we had to surround this statement with
+parentheses. JavaScript normally parses a ={= as the start of block.
+
+You can create a variable for the remaining items in an object using
+the syntax ...:
+
+#+begin_src js
+let { a, ...passthrough } = o;
+let total = passthrough.b + passthrough.c.length;
+#+end_src
+
+{{{heading(Property Renaming)}}}
+
+#+pindex:property renaming
+You can also give different names to properties:
+
+#+begin_src js
+let { a: newName1, b: newName2 } = o;
+#+end_src
+
+You can read ~a: newName1~ as “a as newName1”.  The direction is
+left-to-right, as if you had written:
+
+#+begin_src js
+let newName1 = o.a;
+let newName2 = o.b;
+#+end_src
+
+Confusingly, the colon here does not indicate the type.  The type, if
+you specify it, still needs to be written after the entire
+destructuring:
+
+#+begin_src js
+let { a, b }: { a: string, b: number } = o;
+#+end_src
+
+{{{heading(Default Values)}}}
+
+#+cindex:default values
+Default values let you specify a default value in case a property is
+=undefined=:
+
+#+begin_src js
+function keepWholeObject(wholeObject: { a: string, b?: number }) {
+    let { a, b = 1001 } = wholeObject;
+}
+#+end_src
+
+In this example the ~b?~ indicates that ~b~ is optional, so it may be
+=undefined=.  ~keepWholeObject~ now has a variable for ~wholeObject as
+well as the properties ~a~ and ~b~, even if ~b~ is =undefined=.
+
+*** Function Declarations and Destructuring
+#+cindex:destructuring
+#+cindex:function declarations and destructuring
+Destructuring also works in function declarations. For simple cases
+this is straightforward:
+
+#+begin_src js
+type C = { a: string, b?: number }
+function f({ a, b }: C): void {
+    // ...
+}
+#+end_src
+
+But specifying defaults is more common for parameters, and getting
+defaults right with destructuring can be tricky.  First of all, you
+need to remember to put the pattern before the default value.
+
+#+begin_src js
+function f({ a="", b=0 } = {}): void {
+    // ...
+}
+f();
+#+end_src
+
+Then, you need to remember to give a default for optional properties
+on the destructured property instead of the main initializer.  Remember
+that ~C~ was defined with ~b~ optional:
+
+#+begin_src js
+function f({ a, b=0 } = { a: "" }): void {
+    // ...
+}
+f({ a: "yes" }); // ok, default b = 0
+f(); // ok, default to { a: "" }, which then defaults b = 0
+f({}); // error, 'a' is required if you supply an argument
+#+end_src
+
+Use destructuring with care.  As the previous example demonstrates,
+anything but the simplest destructuring expression is confusing.  This
+is especially true with deeply nested destructuring, which gets really
+hard to understand even without piling on renaming, default values,
+and type annotations.  Try to keep destructuring expressions small and
+simple.  You can always write the assignments that destructuring would
+generate yourself.
+** Spreading
+#+cindex:@code{spread} operator
+#+cindex:spreading
+The =spread= operator is the opposite of destructuring.  It allows you
+to spread an array into another array, or an object into another
+object.  For example:
+
+#+begin_src js
+let first = [1, 2];
+let second = [3, 4];
+let bothPlus = [0, ...first, ...second, 5];
+#+end_src
+
+#+cindex:shallow copy, @code{spread} operator
+This gives ~bothPlus~ the value =[0, 1, 2, 3, 4, 5]=.  Spreading
+creates a shallow copy of first and second.  They are not changed by
+the spread.
+
+You can also spread objects:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { ...defaults, food: "rich" };
+#+end_src
+
+Now search is ={ food: "rich", price: "$$", ambiance: "noisy" }=.
+Object spreading is more complex than array spreading.  Like array
+spreading, it proceeds from left-to-right, but the result is still an
+object.  This means that properties that come later in the spread
+object overwrite properties that come earlier.  So if we modify the
+previous example to spread at the end:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { food: "rich", ...defaults };
+#+end_src
+
+Then the =food= property in defaults overwrites =food: "rich"=, which
+is not what we want in this case.
+
+Object spread also has a couple of other surprising limits.  First, it
+only includes an objects’ own, enumerable properties.  Basically, that
+means you lose methods when you spread instances of an object:
+
+#+begin_src js
+class C {
+  p = 12;
+  m() {
+  }
+}
+let c = new C();
+let clone = { ...c };
+clone.p; // ok
+clone.m(); // error!
+#+end_src
+
+Second, the Typescript compiler doesn’t allow spreads of type
+parameters from generic functions.  That feature is expected in future
+versions of the language.
 * Supplementary Programs
 :PROPERTIES:
 :appendix: t
