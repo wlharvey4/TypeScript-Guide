@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-16 14:11
-#+macro:version 0.0.19
+#+date:2019-08-16 14:35
+#+macro:version 0.0.20
 
 #+texinfo:@insertcopying
 
@@ -54,7 +54,6 @@ with your tools:
 : npm install -g typescript@next
 
 * Configuration and Compilation
-
 ** The ~tsconfig~ File
 #+cindex:schema, @file{tsconfig.json}
 #+cindex:@file{tsconfig.json} schema
@@ -749,6 +748,193 @@ module.exports = {
         ]
     }
 }
+#+end_src
+** An Example
+In your editor, type the following JavaScript code in ~greeter.ts~:
+
+#+name:greater.ts
+#+header: :mkdirp yes
+#+begin_src js :tangle examples/greeter.ts
+function greeter(person) {
+    return "Hello, " + person;
+}
+
+let user = "Jane User";
+
+document.body.textContent = greeter(user);
+#+end_src
+
+{{{heading(Compiling the Code)}}}
+
+We used a ~.ts~ extension, but this code is just JavaScript.  You could
+have copy/pasted this straight out of an existing JavaScript app.
+
+At the command line, run the TypeScript compiler:
+
+#+name:compile-greeter.ts
+#+header: :results output :exports both :dir examples
+#+begin_src sh
+tsc greeter.ts
+#+end_src
+
+The result will be a file ~greeter.js~ which contains the same
+JavaScript that you fed in.  We’re up and running using TypeScript in
+our JavaScript app!
+
+Now we can start taking advantage of some of the new tools TypeScript
+offers.  Add a =: string= type annotation to the ‘person’ function
+argument as shown here:
+
+#+name:greeter2.ts
+#+begin_src js :tangle examples/greeter2.ts
+function greeter(person: string) {
+    return "Hello, " + person;
+}
+
+let user = "Jane User";
+
+document.body.textContent = greeter(user);
+#+end_src
+
+#+name:compile-greet2.ts
+#+begin_src sh :results output :exports both :dir examples
+tsc greeter2.ts
+#+end_src
+
+*** Type Annotations
+#+cindex:type annotation
+Type annotations in TypeScript are lightweight ways to record the
+intended contract of the function or variable.  In this case, we
+intend the ~greeter~ function to be called with a single string
+parameter.  We can try changing the call ~greeter~ to pass an array
+instead:
+
+#+name:greeter-wrong.ts
+#+begin_src js :tangle examples/greeter-wrong.ts
+function greeter(person: string) {
+    return "Hello, " + person;
+}
+
+let user = [0, 1, 2];
+
+document.body.textContent = greeter(user);
+#+end_src
+
+Re-compiling, you’ll now see an error:
+
+#+name:compile-greeter-wrong.ts
+#+begin_src sh :results output :exports both :dir examples
+tsc greet-wrong.ts
+#+end_src
+
+: error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'string'.
+
+Similarly, try removing all the arguments to the greeter call.
+TypeScript will let you know that you have called this function with
+an unexpected number of parameters.  In both cases, TypeScript can
+offer static analysis based on both the structure of your code, and
+the type annotations you provide.
+
+Notice that although there were errors, the ~greeter.js~ file is still
+created.  You can use TypeScript even if there are errors in your
+code.  But in this case, TypeScript is warning that your code will
+likely not run as expected.
+
+*** Interfaces
+Let’s develop our sample further.  Here we use an interface that
+describes objects that have a =firstName= and =lastName= field.  In
+TypeScript, two types are compatible if their internal structure is
+compatible.  This allows us to implement an interface just by having
+the shape the interface requires, without an explicit implements
+clause.
+
+#+name:greeter-interface.ts
+#+begin_src js :tangle examples/greeter-interface.ts
+interface Person {
+    firstName: string;
+    lastName: string;
+}
+
+function greeter(person: Person) {
+    return "Hello, " + person.firstName + " " + person.lastName;
+}
+
+let user = { firstName: "Jane", lastName: "User" };
+
+document.body.textContent = greeter(user);
+#+end_src
+
+#+name:compile-greeter-interface.ts
+#+begin_src sh :results output :exports both :dir examples
+tsc greeter-interface.ts
+#+end_src
+
+*** Classes
+Finally, let’s extend the example one last time with classes.
+TypeScript supports new features in JavaScript, like support for
+class-based object-oriented programming.
+
+Here we’re going to create a =Student= class with a constructor and a
+few public fields.  Notice that classes and interfaces play well
+together, letting the programmer decide on the right level of
+abstraction.
+
+Also of note, the use of =public= on arguments to the constructor is a
+shorthand that allows us to automatically create properties with that
+name.
+
+#+name:greeter-class.ts
+#+begin_src js :tangle examples/greeter-class.ts
+class Student {
+    fullName: string;
+    constructor(public firstName: string, public middleInitial: string, public lastName: string) {
+        this.fullName = firstName + " " + middleInitial + " " + lastName;
+    }
+}
+
+interface Person {
+    firstName: string;
+    lastName: string;
+}
+
+function greeter(person: Person) {
+    return "Hello, " + person.firstName + " " + person.lastName;
+}
+
+let user = new Student("Jane", "M.", "User");
+
+document.body.textContent = greeter(user);
+#+end_src
+
+#+name:compile-greeter-class.ts
+#+begin_src sh :results output :exports both :dir examples
+tsc greeter-class.ts
+#+end_src
+
+Run ~tsc greeter-class.ts~ and you’ll see the generated JavaScript is
+the same as the earlier code.  Classes in TypeScript are just a
+shorthand for the same prototype-based OO that is frequently used in
+JavaScript.
+
+*** Running your TypeScript Web App
+Now type the following in ~greeter.html~:
+
+#+begin_src html :tangle examples/greeter.html
+<!DOCTYPE html>
+<html>
+    <head><title>TypeScript Greeter</title></head>
+    <body>
+        <script src="greeter-class.js"></script>
+    </body>
+</html>
+#+end_src
+
+Open ~greeter.html~ in the browser to run your first simple TypeScript
+web application!
+
+#+name:open-greeter-class.html
+#+begin_src sh :results output :exports both :dir examples
+open greeter.html
 #+end_src
 * Types
 #+cindex:types
