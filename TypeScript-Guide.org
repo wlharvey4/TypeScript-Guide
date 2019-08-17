@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-16 14:43
-#+macro:version 0.0.21
+#+date:2019-08-17 09:11
+#+macro:version 0.0.22
 
 #+texinfo:@insertcopying
 
@@ -4048,6 +4048,188 @@ function createZoo(): Animal[] {
 In this example, best common type has a set of four candidates:
 =Animal=, =Rhino=, =Elephant=, and =Snake=.  Of these, =Animal= can be
 chosen by the best common type algorithm.
+* Modules
+In order to align with ECMAScript 2015’s terminology, (namely that
+~module X {~ is equivalent to the now-preferred ~namespace X {~), in
+TypeScript 1.5, the nomenclature has changed:
+
+- “Internal modules” are now “namespaces”
+- “External modules” are now simply “modules”
+
+
+#+cindex:ECMAScript 2015
+Starting with ECMAScript 2015, JavaScript has a concept of
+modules.  TypeScript shares this concept.
+
+{{{heading(Modules Have Their Own Scope)}}}
+
+#+cindex:module scope
+#+cindex:scope, module
+Modules are executed within their own scope, not in the global scope;
+this means that variables, functions, classes, etc. declared in a
+module are not visible outside the module unless they are explicitly
+exported using one of the export forms.  Conversely, to consume a
+variable, function, class, interface, etc. exported from a different
+module, it has to be imported using one of the import forms.
+
+{{{heading(Modules are Declarative)}}}
+
+Modules are declarative; the relationships between modules are
+specified in terms of imports and exports at the file level.
+
+{{{heading(Module Loaders)}}}
+
+#+cindex:module loader
+#+cindex:CommonJS module loader
+#+cindex:RequireJS module loader
+Modules import one another using a module loader.  At runtime the
+module loader is responsible for locating and executing all
+dependencies of a module before executing it.  Well-known module
+loaders used in JavaScript are Node.js’s loader for CommonJS modules
+and the RequireJS loader for AMD modules in Web applications.
+
+{{{heading(What Makes a Module)}}}
+
+#+cindex:module
+#+cindex:script
+In TypeScript, just as in ECMAScript 2015, any file containing a
+top-level import or export is considered a module.  Conversely, a file
+without any top-level import or export declarations is treated as a
+script whose contents are available in the global scope (and therefore
+to modules as well).
+
+** Export Keyword
+#+cindex:@code{export} keyword
+Any declaration (such as a variable, function, class, type alias, or
+interface) can be exported by adding the =export= keyword.  The
+=export= keyword can also be used in a statement, in which the
+exported object can be aliased.
+
+#+begin_src js
+export interface <Name> { ... }
+export const <id> = <expression>;
+export { <Name> as <alias> };
+#+end_src
+
+{{{heading(Re-Exports)}}}
+
+#+cindex:re-export
+Often modules extend other modules, and partially expose some of their
+features.  A re-export does not import it locally, or introduce a local
+variable.
+
+#+begin_src js
+<implementation>
+
+export { <original-name> as <new-name> from "./<path>";
+#+end_src
+
+Optionally, a module can wrap one or more modules and combine all
+their exports using export * from "module" syntax.
+
+#+begin_src js
+export * from "./StringValidator"; // exports 'StringValidator' interface
+export * from "./ZipCodeValidator";  // exports 'ZipCodeValidator' and const 'numberRegexp' class
+export * from "./ParseIntBasedZipCodeValidator"; //  exports the 'ParseIntBasedZipCodeValidator' class
+                                                 // and re-exports 'RegExpBasedZipCodeValidator' as alias
+                                                 // of the 'ZipCodeValidator' class from 'ZipCodeValidator.ts'
+                                                 // module.
+#+end_src
+
+** Import Keyword
+Importing an exported declaration is done through using one of the
+import forms below:
+
+{{{heading(Import a single export from a module)}}}
+
+#+begin_src js
+import { <object> } from "./<path>";
+#+end_src
+
+Imports can also be renamed:
+
+#+begin_src js
+import { <object> as <alias> } from "./<path>";
+#+end_src
+
+{{{heading(Import the entire module into a single variable, and use it
+to access the module exports)}}}
+
+#+begin_src js
+import * as <name> from "./<path";
+#+end_src
+
+{{{heading(Import a module for side-effects only)}}}
+
+Though not recommended practice, some modules set up some global state
+that can be used by other modules. These modules may not have any
+exports, or the consumer is not interested in any of their exports. To
+import these modules, use:
+
+#+begin_src js
+import "./<path>";
+#+end_src
+
+** Default Exports
+#+cindex:default exports
+#+cindex:@code{default} keyword
+Each module can optionally export a default export.  Default exports
+are marked with the keyword =default=; and there can only be one
+default export per module.  =default= exports are imported using a
+different import form.
+
+#+begin_src js
+export default <object>;
+#+end_src
+
+#+begin_src js
+import <object> from "<path>";
+#+end_src
+
+Classes and function declarations can be authored directly as default
+exports.  Default export class and function declaration names are
+optional.  =default= exports can also be just values.
+
+#+begin_src js
+export default class { ... }
+#+end_src
+
+or
+
+#+begin_src js
+export default function (<params>) { ... }
+#+end_src
+
+#+begin_src js
+import <name> from "./<path>";
+#+end_src
+
+** export = and import =
+#+cindex:@code{export =}
+#+cindex:@code{import =}
+#+cindex:CommonJS
+#+cindex:AMD
+Both CommonJS and AMD generally have the concept of an exports object
+which contains all exports from a module.  They also support replacing
+the =exports= object with a custom single object.  Default exports are
+meant to act as a replacement for this behavior; however, the two are
+incompatible.  TypeScript supports ~export =~ to model the traditional
+CommonJS and AMD workflow.
+
+The ~export =~ syntax specifies a single object that is exported from
+the module.  This can be a class, interface, namespace, function, or
+enum.  When exporting a module using ~export =~, TypeScript-specific
+~import module = require("module")~ must be used to import the module.
+
+#+begin_src js
+...
+export = <Object>
+#+end_src
+
+#+begin_src js
+import <name> = require("./<path>");
+#+end_src
+
 * Declaration Files
 #+cindex:declaration file
 This guide is designed to teach you how to write a high-quality
@@ -4107,7 +4289,6 @@ to an npm package, and shows how to manage your dependent packages.
 
 For JavaScript library users, the Consumption section offers a few
 simple steps to locate and install corresponding declaration files.
-
 
 * Supplementary Programs
 :PROPERTIES:
