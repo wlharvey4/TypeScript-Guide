@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-19 09:50
-#+macro:version 0.0.26
+#+date:2019-08-19 11:15
+#+macro:version 0.0.27
 
 #+texinfo:@insertcopying
 
@@ -1525,6 +1525,137 @@ let strLength: number = (someValue as string).length;
 
 When using TypeScript with JSX, only =as=-style assertions are
 allowed.
+** Type Aliases
+#+cindex:type alias
+#+cindex:alias, type
+Declare a type alias that points to a type:
+
+#+begin_src js
+  type Age = number
+
+  type Person = {
+      name: string
+      age: Age
+  }
+#+end_src
+
+=Age= is a number, but it helps annotate what =age= is inside a
+=Person= object.
+
+#+begin_src js
+  let age : Age = 55; //     let age = 55 also works
+
+  let driver: Person = {
+      name: 'John Doe'
+      age: age
+  }
+#+end_src
+
+#+cindex:block-scoped, type alias
+Type aliases are block-scoped.  Every block and every function has its
+own scope, and inner type alias declarations shadow outer ones.
+** Union and Intersection Types
+#+cindex:union
+#+cindex:intersection
+If you have two things =A= and =B=, the /union/ of those things is
+their sum (everything in =A= or =B= or both), and the /intersection/
+is what they have in common (everything in both =A= and =B=).
+
+TypeScript gives us special type operators to describe unions and
+intersections of types:
+
+- =|= :: union
+
+- =&= :: intersection
+
+
+#+begin_src js
+type Cat = {name: string, purrs: boolean}
+type Dog = {name: string, barks: boolean, wags: boolean}
+
+type CatOrDogOrBoth = Cat | Dog
+
+type CatAndDog = Cat & Dog
+#+end_src
+
+If something is a =CatOrDogOrBoth=, what do you know about it?  You
+know that it has a =name= property that’s a string, and not much else.
+On the flip side, what can you assign to a =CatOrDogOrBoth=?  Well, a
+=Cat=, a =Dog=, or both:
+
+#+begin_src js
+  // Cat
+  let a: CatOrDogOrBoth = {
+    name: 'Bonkers',
+    purrs: true
+  }
+
+  // Dog
+  a = {
+    name: 'Domino',
+    barks: true,
+    wags: true
+  }
+
+  // Both
+  a = {
+    name: 'Donkers',
+    barks: true,
+    purrs: true,
+    wags: true
+  }
+#+end_src
+
+This is worth reiterating: a value with a /union/ type (=|=) isn’t
+necessarily one specific member of your union; in fact, it can be both
+members at once!
+
+On the other hand, what do you know about CatAndDog?  Not only does
+your canine-feline hybrid super-pet have a name, but it can purr,
+bark, and wag:
+
+#+begin_src js
+  let b: CatAndDog = {
+    name: 'Domino',
+    barks: true,
+    purrs: true,
+    wags: true
+  }
+#+end_src
+
+Unions come up naturally a lot more often than intersections do.  Take
+this function, for example:
+
+#+begin_src js
+  function trueOrNull(isTrue: boolean) {
+    if (isTrue) {
+      return 'true'
+    }
+    return null
+  }
+#+end_src
+
+What is the type of the value this function returns?  Well, it might
+be a string, or it might be null.  We can express its return type as:
+
+#+begin_src js
+type Returns = string | null
+#+end_src
+
+What about the return type of this function?
+
+#+begin_src js
+function(a: string, b: number) {
+  return a || b
+#+end_src
+
+If a is truthy then the return type is string, and otherwise it’s
+number: in other words,
+
+#+begin_src js
+type Returns = string | number
+#+end_src
+
 * Variables
 ** Var
 *** Var Scoping Rules
@@ -4551,6 +4682,33 @@ TypeScript Declaration File.
 
 In this guide, we’ll assume basic familiarity with the TypeScript
 language.
+
+{{{heading(declaration Keyword)}}}
+
+#+cindex:@code{declare} keyword
+Since module declaration files have to live in ~.d.ts~ files and so
+can’t contain values, when you declare module types you need to use
+the ~declare~ keyword to affirm that values of the given type really
+are exported by your module.
+
+{{{subheading(Some Declarations)}}}
+
+- var a=1 :: declare var a: number
+
+- let a=1 :: declare let a: number
+
+- const a=1 :: declare const a: 1
+
+- function a(b) { return b.toFixed } :: declare function a(b: number):
+     string
+
+- class A { b() { return 3 } } :: declare class A { b (): number }
+
+- namespace A {} :: declare namespace A {}
+
+- type A = number :: type A = number
+
+- interface A { b? : string } :: interface A { b? : string }
 
 {{{heading(Sections)}}}
 
