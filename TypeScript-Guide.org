@@ -1,27 +1,25 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-19 11:15
-#+macro:version 0.0.27
+#+date:2019-08-19 11:30
+#+macro:version 0.0.28
 
 #+texinfo:@insertcopying
 
-* Source Installation and Update
-#+cindex:source
-#+cindex:installation
-#+cindex:updating
-
-** About TypeScript
+* About TypeScript
 TypeScript is a superset of JavaScript that compiles to clean
 JavaScript output.
 
 - https://www.typescriptlang.org
 
 ** Source Code Repository
+#+cindex:source
 TypeScript is being developed on GitHub and is open source.
 
 - https://github.com/Microsoft/TypeScript
 
 ** Installation
+#+cindex:installation
+#+cindex:updating
 
 {{{heading(Adding TypeScript as a Global Installation)}}}
 
@@ -172,10 +170,10 @@ best it can with what you gave it.  If you do something that doesn’t
 seem right, TypeScript complains, and if you’re explicit about your
 intentions, TypeScript gets out of your way.
 
-** Errors Surface at Compile Time
+{{{heading(Many Errors are Found through Static Analysis)}}}
 
-{{{heading(Static Analysis)}}}
-
+#+cindex:compile time
+#+cindex:static analysis
 TypeScript typechecks your code at compile time (remember step 2 in
 the list at the beginning of this chapter?), so you don’t need to
 actually run your code to see the Error from the previous example.
@@ -183,9 +181,12 @@ TypeScript statically analyzes your code for errors like these, and
 shows them to you before you run it.  If your code doesn’t compile,
 that’s a really good sign that you made a mistake and you should fix
 it before you try to run the code.
+
+#+cindex:syntax errors
+#+cindex:type-related errors
 TypeScript throws both syntax-related errors and type-related errors
 at compile time.  In practice, that means those kinds of errors will
-show up in your code editor, right as you type—it’s an amazing
+show up in your code editor, right as you type---it’s an amazing
 experience if you’ve never worked with an incrementally compiled
 statically typed language before.  That said, there are lots of errors
 that TypeScript can’t catch for you at compile time---things like
@@ -696,8 +697,6 @@ default TSLint configuration:
 #+end_src
 
 ** Creating a TypeScript Project
-
-** 
 
 {{{heading(Install NodeJS)}}}
 
@@ -4900,6 +4899,7 @@ Copyright {{{noindent}}}\copy 2019 {{{author}}} {{{theVersion}}}
 #+macro:subheading @@texinfo:@subheading@@ $1
 #+macro:command @@texinfo:@command{@@$1@@texinfo:}@@
 #+macro:option @@texinfo:@option{@@$1@@texinfo:}@@
+#+macro:file @@texinfo:@file{@@$1@@texinfo:}@@
 
 * Export Options                                                   :noexport:
 
