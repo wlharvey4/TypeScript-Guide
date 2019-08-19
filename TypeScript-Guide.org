@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-17 09:11
-#+macro:version 0.0.22
+#+date:2019-08-18 18:28
+#+macro:version 0.0.23
 
 #+texinfo:@insertcopying
 
@@ -54,6 +54,135 @@ with your tools:
 : npm install -g typescript@next
 
 * Configuration and Compilation
+#+cindex:compilation
+Where TypeScript is special is that instead of compiling straight to
+bytecode, TypeScript compiles to… JavaScript code!  You then run that
+JavaScript code like you normally would—in your browser, or with
+NodeJS, or by hand with a paper and pen (for anyone reading this after
+the machine uprising has begun).
+
+** Compilation Basics
+#+cindex:compiler
+#+cindex:AST
+#+cindex:abstract syntax tree
+#+cindex:typechecker, typechecking
+#+cindex:bytecode
+After the TypeScript Compiler generates an AST for your program---but
+before it emits code---it typechecks your code.  A typechecker is a
+special program that verifies that your code is typesafe.  This
+typechecking is the magic behind TypeScript.  It’s how TypeScript
+makes sure that your program works as you expect, that there aren’t
+obvious mistakes.
+
+So if we include typechecking and JavaScript emission, the process of
+compiling TypeScript now looks roughly like:
+
+1. TypeScript source parsed into TypeScript AST
+2. AST is checked by the typechecker
+3. TypeScript AST is transpiled into JavaScript source
+4. JavaScript source parsed into JavaScript AST
+5. AST is compiled into JavaScript bytecode
+6. Bytecode is evaluated by the JavaScript runtime
+
+
+#+cindex:JavaScript runtime
+Steps 1–3 are done by TSC, and steps 4–6 are done by the JavaScript
+runtime that lives in your browser, NodeJS, or whatever JavaScript
+engine you’re using.
+
+In this process, steps 1–2 use your program’s types; step 3 does not.
+That’s worth reiterating: when TSC compiles your code from TypeScript
+to JavaScript, it won’t look at your types.  That means your program’s
+types will never affect your program’s generated output, and are only
+used for typechecking.  This feature makes it foolproof to play around
+with, update, and improve your program’s types, without risking
+breaking your application.
+
+#+cindex:JavaScript engines
+#+cindex:V8 engine
+#+cindex:SpiderMonkey engine
+#+cindex:JSCore
+#+cindex:Chakra
+JavaScript compilers and runtimes tend to be smushed into a single
+program called an engine; as a programmer, this is what you’ll
+normally interact with. It’s how V8 (the engine powering NodeJS,
+Chrome, and Opera), SpiderMonkey (Firefox), JSCore (Safari), and
+Chakra (Edge) work, and it’s what gives JavaScript the appearance of
+being an interpreted language.
+
+** The Type System
+#+cindex:type system
+#+cindex:typechecker
+A type system is a set set of rules a typechecker uses to assign types
+to your program.  There are generally two kinds of type systems: type
+systems in which you have to tell the compiler what type everything is
+with explicit syntax, and type systems that infer the types of things
+for you automatically. Both approaches have trade-offs.  TypeScript is
+inspired by both kinds of type systems: you can explicitly annotate
+your types, or you can let TypeScript infer most of them for you.
+
+#+cindex:annotation
+#+cindex:type annotation
+#+cindex:inference
+#+cindex:type inference
+To explicitly signal to TypeScript what your types are, use
+annotations.  Annotations take the form =value: type= and tell the
+typechecker that the =value= has the =type=.  If you want TypeScript
+to infer your types for you, just leave them off and let TypeScript
+get to work.  In general, it is good style to let TypeScript infer as
+many types as it can for you, keeping explicitly typed code to a
+minimum.
+
+{{{heading(Gradually Typed System)}}}
+
+#+cindex:gradual typing
+#+cindex:gradually typed system
+TypeScript is a gradually typed language.  That means that TypeScript
+works best when it knows the types of everything in your program at
+compile time, but it doesn’t have to know every type in order to
+compile your program.  Even in an untyped program TypeScript can infer
+some types for you and catch some mistakes, but without knowing the
+types for everything, it will let a lot of mistakes slip through to
+your users.
+
+This gradual typing is really useful for migrating legacy codebases
+from untyped JavaScript to typed TypeScript (more on that in
+“Gradually Migrating from JavaScript to TypeScript”), but unless
+you’re in the middle of migrating your codebase, you should aim for
+100% type coverage.
+
+{{{heading(Weakly Typed System)}}}
+
+#+cindex:weakly typed system
+JavaScript is weakly typed, meaning if you do something invalid like
+add a number and an array (like we did in Chapter 1), it will apply a
+bunch of rules to figure out what you really meant so it can do the
+best it can with what you gave it.  If you do something that doesn’t
+seem right, TypeScript complains, and if you’re explicit about your
+intentions, TypeScript gets out of your way.
+
+** Errors Surface at Compile Time
+
+{{{heading(Static Analysis)}}}
+
+TypeScript typechecks your code at compile time (remember step 2 in
+the list at the beginning of this chapter?), so you don’t need to
+actually run your code to see the Error from the previous example.
+TypeScript statically analyzes your code for errors like these, and
+shows them to you before you run it.  If your code doesn’t compile,
+that’s a really good sign that you made a mistake and you should fix
+it before you try to run the code.
+TypeScript throws both syntax-related errors and type-related errors
+at compile time.  In practice, that means those kinds of errors will
+show up in your code editor, right as you type—it’s an amazing
+experience if you’ve never worked with an incrementally compiled
+statically typed language before.  That said, there are lots of errors
+that TypeScript can’t catch for you at compile time---things like
+stack overflows, broken network connections, and malformed user
+inputs—that will still result in runtime exceptions.  What TypeScript
+does is make compile-time errors out of most errors that would have
+otherwise been runtime errors in a pure JavaScript world.
+
 ** The ~tsconfig~ File
 #+cindex:schema, @file{tsconfig.json}
 #+cindex:@file{tsconfig.json} schema
@@ -451,10 +580,78 @@ feature is currently supported in Visual Studio 2015 with TypeScript
 }
 #+end_src
 
-** Compilation of a TypeScript Project
+** Creating a TypeScript Project
+
+{{{heading(Install NodeJS)}}}
+
+#+cindex:@command{tsc}
+#+cindex:NodeJS
+#+cindex:@command{npm}
+#+cindex:package manager
+#+cindex:TSLint
+#+cindex:linter
+~tsc~ is itself a command-line application written in TypeScript,
+which means you need NodeJS to run it.  Follow the instructions on the
+official NodeJS website to get NodeJS up and running on your machine.
+NodeJS comes with ~npm~, a package manager that you will use to manage
+your project’s dependencies and orchestrate your build.  We’ll start
+by using it to install ~tsc~ and TSLint (a linter for TypeScript).
+
+{{{heading(Create a TypeScript Project)}}}
+
+#+cindex:@code{npm} project
+#+cindex:TypeScript project
+#+cindex:project
+#+cindex:install TypeScript
+#+cindex:type declarations
+Start by opening your terminal and creating a new folder, then
+initializing a new ~npm~ project in it:
+
+#+begin_src sh
+# Create a new folder
+mkdir chapter-2
+cd chapter-2
+
+# Initialize a new NPM project (follow the prompts)
+npm init
+
+# Install TSC, TSLint, and type declarations for NodeJS
+npm install --save-dev typescript tslint @types/node”
+#+end_src
+
+** Configuring a TypeScript Project
 
 #+cindex:compilation
 #+cindex:@file{tsconfig.json}
+#+cindex:root directory
+Every TypeScript project should include a file called
+{{{file(tsconfig.json)}}} in its root directory.  This
+{{{file(tsconfig.json)}}} is where TypeScript projects define things
+like which files should be compiled, which directory to compile them
+to, and which version of JavaScript to emit.
+
+Create a new file called {{{file(tsconfig.json)}}} in your root folder
+(=touch tsconfig.json=), then pop it open in your code editor and give
+it the following contents:
+
+#+caption: Simple {{{file(tsconfig.json)}}} File
+#+name:simple-tsconfig.json
+#+begin_src js
+{
+  "compilerOptions": {
+    "lib": ["es2015"],
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2015"
+  },
+  "include": [
+    "src"
+  ]
+}
+#+end_src
+
 A project is compiled:
 
 {{{heading(Using tsconfig.json)}}}
