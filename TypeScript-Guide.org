@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-18 23:50
-#+macro:version 0.0.24
+#+date:2019-08-19 00:00
+#+macro:version 0.0.25
 
 #+texinfo:@insertcopying
 
@@ -194,7 +194,53 @@ inputs—that will still result in runtime exceptions.  What TypeScript
 does is make compile-time errors out of most errors that would have
 otherwise been runtime errors in a pure JavaScript world.
 
+** Project Structure
+In a TypeScript project, it's best to have separate source and
+distributable files.  TypeScript (~.ts~) files live in your ~src~
+folder and after compilation are output as JavaScript (~.js~) in the
+~dist~ folder.  The ~test~ and ~views~ folders remain top level as
+expected.
+
+The full folder structure of a sample app is explained below:
+
+- dist :: Contains the distributable (or output) from your TypeScript
+          build. This is the code you ship
+- node_modules :: Contains all your npm dependencies
+- src :: Contains your source code that will be compiled to the dist
+         dir
+- src/config :: Passport authentication strategies and login
+                middleware. Add other complex config code here
+- src/controllers :: Controllers define functions that respond to
+     various http requests
+- src/models :: Models define Mongoose schemas that will be used in
+                storing and retrieving data from MongoDB
+- src/public :: Static assets that will be used client side
+- src/types :: Holds .d.ts files not found on DefinitelyTyped. Covered
+               more in this [[https://github.com/Microsoft/TypeScript-Node-Starter#type-definition-dts-files][section]]
+- src/server.ts :: Entry point to your express app
+- test :: Contains your tests. Separate from source because there is a
+          different build process.
+- views :: iews define how your app renders on the client.
+- .env :: API keys, tokens, passwords, database URI. Clone this, but
+          don't check it in to public repos.
+- .travis.yml :: Used to configure Travis CI build
+- .copyStaticAssets.ts :: Build script that copies images, fonts, and
+     JS libs to the dist folder
+- jest.config.js :: Used to configure Jest running tests written in
+                    TypeScript
+- package.json :: File that contains npm dependencies as well as build
+                  scripts
+- tsconfig.json :: Config settings for compiling server code written
+                   in TypeScript
+- tsconfig.tests.json :: Config settings for compiling tests written
+     in TypeScript
+- .eslintrc :: Config settings for ESLint code style checking
+- .eslintignore :: Config settings for paths to exclude from linting
+
+
 ** The ~tsconfig~ File
+
+** 
 #+cindex:schema, @file{tsconfig.json}
 #+cindex:@file{tsconfig.json} schema
 Schema for the ~tsconfig.json~ file can be found at:
