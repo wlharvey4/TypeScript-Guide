@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-19 00:00
-#+macro:version 0.0.25
+#+date:2019-08-19 09:50
+#+macro:version 0.0.26
 
 #+texinfo:@insertcopying
 
@@ -237,10 +237,12 @@ The full folder structure of a sample app is explained below:
 - .eslintrc :: Config settings for ESLint code style checking
 - .eslintignore :: Config settings for paths to exclude from linting
 
-
 ** The ~tsconfig~ File
+Every TypeScript project should include a file called ~tsconfig.json~
+in its root directory.  This tsconfig.json is where TypeScript
+projects define things like which files should be compiled, which
+directory to compile them to, and which version of JavaScript to emit.
 
-** 
 #+cindex:schema, @file{tsconfig.json}
 #+cindex:@file{tsconfig.json} schema
 Schema for the ~tsconfig.json~ file can be found at:
@@ -522,6 +524,48 @@ Other packages under ~node_modules/@types/*~ will not be included.
 #+end_src
 
 *** Example tsconfig.json Files
+
+{{{heading(Standard Options)}}}
+
+#+begin_src js
+{
+  "compilerOptions": {
+    "lib": ["es2015"],
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2015"
+  },
+  "include": [
+    "src"
+  ]
+}
+#+end_src
+
+- include :: Which folders should TSC look in to find your TypeScript
+             files?
+- lib :: Which APIs should TSC assume exist in the environment you’ll
+         be running your code in?  This includes things like ES5’s
+         ~Function.prototype.bind~, ES2015’s ~Object.assign~, and the
+         DOM’s ~document.querySelector~.
+- module :: Which module system should TSC compile your code to
+            (CommonJS, SystemJS, ES2015, etc.)?
+- outDir :: Which folder should TSC put your generated JavaScript code
+            in?
+- strict :: Be as strict as possible when checking for invalid
+            code.  This option enforces that all of your code is
+            properly typed.
+- target :: Which JavaScript version should TSC compile your code to
+            (ES3, ES5, ES2015, ES2016, etc.)?
+
+
+Note that while using a ~tsconfig.json~ file to configure TSC is handy
+because it lets us check that configuration into source control, you
+can set most of TSC’s options from the command line too.  Run
+=./node_modules/.bin/tsc --help= for a list of available command-line
+options.
+
 {{{heading("Files" Property)}}}
 
 #+caption:tsconfig.json using the "files" property
@@ -637,7 +681,23 @@ feature is currently supported in Visual Studio 2015 with TypeScript
 }
 #+end_src
 
+** The ~tslint.json~ File
+#+cindex:@file{tslint.json} file
+Your project should also have a ~tslint.json~ file containing your
+TSLint configuration, codifying whatever stylistic conventions you
+want for your code (tabs versus spaces, etc.).
+
+The following command will generate a ~tslint.json~ file with a
+default TSLint configuration:
+
+#+tslint.json-init
+#+begin_src sh
+./node_modules/.bin/tslint --init
+#+end_src
+
 ** Creating a TypeScript Project
+
+** 
 
 {{{heading(Install NodeJS)}}}
 
