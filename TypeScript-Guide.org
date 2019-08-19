@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-19 11:30
-#+macro:version 0.0.28
+#+date:2019-08-19 11:56
+#+macro:version 0.0.29
 
 #+texinfo:@insertcopying
 
@@ -1554,11 +1554,18 @@ Declare a type alias that points to a type:
 Type aliases are block-scoped.  Every block and every function has its
 own scope, and inner type alias declarations shadow outer ones.
 ** Union and Intersection Types
-#+cindex:union
+#+cindex:union types
+#+cindex:types, union
 #+cindex:intersection
 If you have two things =A= and =B=, the /union/ of those things is
 their sum (everything in =A= or =B= or both), and the /intersection/
-is what they have in common (everything in both =A= and =B=).
+is everything in both =A= and =B=.
+
+*** Union Types
+#+cindex:union type
+#+cindex:widen
+A /union type/ *widens* the allowable values by specifying that the
+value can be of more than a single type.
 
 TypeScript gives us special type operators to describe unions and
 intersections of types:
@@ -1567,6 +1574,59 @@ intersections of types:
 
 - =&= :: intersection
 
+
+For example, it is possible to create a type that is either a =Boolean
+or a =number=.  Union types use the pipe-delimeter (=|=) to separate
+each of the possible types, which you can read as an =OR=.  Attempting
+to supply a value that doesn’t match one of the types in the union
+results in an error.
+
+#+begin_example
+let union: boolean | number;
+union = 5;
+union = true;
+
+union = 'string'; // Error: Type "string" is not assignable to type 'number | boolean'
+#+end_example
+
+{{{heading(Type Alias for a Union Type)}}}
+
+When creating a union type, consider using a type alias to reduce the
+repetition of the definition in your program and to give the concept a
+name. A union can be created using any types available in your
+program, not just primitive types.
+
+The type alias for a union type is:
+
+: type StringOrError = string | Error;
+
+*** Intersection Types
+#+cindex:intersection types
+#+cindex:type, intersection
+#+cindex:supertype
+An /intersection type/ combines several different types into a single
+supertype that includes the members from all participating types.
+Where a union type is “either type A or B,” an intersection type is
+“both type A and B.”
+
+#+caption:Intersection Type
+#+name:intersection-type
+#+begin_src js
+  interface Skier {
+      slide(): void;
+  }
+
+  interface Shooter {
+      shoot(): void;
+  }
+
+  type Biathelete = Skier & Shooter;
+#+end_src
+
+#+cindex:mixins
+Intersection types are useful for working with mixins
+
+*** Further Examples
 
 #+begin_src js
 type Cat = {name: string, purrs: boolean}
@@ -1655,6 +1715,67 @@ number: in other words,
 type Returns = string | number
 #+end_src
 
+** Literal Types
+#+cindex:literal types
+#+cindex:types, literal
+#+cindex:narrow
+Literal types can be used to narrow the range of allowable values to a
+subset of the type, such as reducing a string, to a set of specific
+values.
+
+#+caption:Literal type example
+#+name:literal-type
+#+begin_src js
+  type Kingdom = 'Bacteria' | 'Protozoa' | 'Chromista' | 'Plantae' | 'Fungi' | 'Animalia';
+
+  let kingdom: Kingdom;
+
+  // OK
+  kingdom = 'Bacteria';
+
+  // Error: Type 'Protista' is not assignable to type 'Kingdom'
+  kingdom = 'Protista';
+#+end_src
+
+#+cindex:union type
+Literal types are really just union types made up of specific values,
+so you can also create a number literal type, or a union/literal
+hybrid type using the same syntax.
+
+#+begin_src js
+  // Number literal type
+  type Fibonacci = 1 | 2 | 3 | 5 | 8 | 13;
+
+  let num: Fibonacci;
+
+  // OK
+  num = 8;
+
+  // Error: Type '9' is not assignable to type 'Fibonacci'
+  num = 9;
+
+  // Hybrid union/literal type
+  type Randoms = 'Text' | 10 | false;
+
+  let random: Randoms;
+
+  // OK
+  random = 'Text';
+  random = 10;
+  random = false;
+
+  // Error: Not assignable.
+  random = 'Other String';
+  random = 12;
+  random = true;
+#+end_src
+
+#+cindex:enumeration, literal type
+#+cindex:literal type, enumeration
+The behavior of literal types is similar to the behavior of
+enumerations, so if you are using only numbers in your literal type,
+consider whether an enumeration would be more expressive in your
+program.
 * Variables
 ** Var
 *** Var Scoping Rules
