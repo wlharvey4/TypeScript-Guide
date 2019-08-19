@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-18 18:28
-#+macro:version 0.0.23
+#+date:2019-08-18 23:50
+#+macro:version 0.0.24
 
 #+texinfo:@insertcopying
 
@@ -23,12 +23,22 @@ TypeScript is being developed on GitHub and is open source.
 
 ** Installation
 
+{{{heading(Adding TypeScript as a Global Installation)}}}
+
 Installation is performed by Node:
 
-#+name:installation
+#+name:global-installation
 #+option: :results output :exports none
-#+begin_src sh :shebang "#!/usr/bin/env bash"
+#+begin_src sh
 yarn global add typescript
+#+end_src
+
+{{{heading(Adding TypeScript as a Local Development Dependency)}}}
+
+#+name:local-installation
+#+option: :results output :exports none
+#+begin_src sh
+yarn add --dev typescript
 #+end_src
 
 ** Nightly Builds
@@ -45,13 +55,14 @@ There are two packages:
      Microsoft.TypeScript.Default.props, etc.)
 
 
-{{{heading(Using npm)}}}
+{{{heading(Using yarn)}}}
 
 A nightly build from the TypeScript’s master branch is published by
 midnight PST to NPM and NuGet.  Here is how you can get it and use it
 with your tools:
 
-: npm install -g typescript@next
+: yarn global add typescript@next
+: yarn add --dev typescript@next
 
 * Configuration and Compilation
 #+cindex:compilation
