@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-19 11:56
-#+macro:version 0.0.29
+#+date:2019-08-20 08:45
+#+macro:version 0.0.30
 
 #+texinfo:@insertcopying
 
@@ -1492,9 +1492,16 @@ create(undefined); // Error
 
 ** Type Assertions
 #+cindex:type assertions
+In cases in which TypeScript determines that an assignment is invalid,
+but you know that you are dealing with a special case, you can
+override the type using a /type assertion/.  When you use a type
+assertion, you are taking responsibility from the compiler and must
+ensure that the assignment is valid. Your program may not work
+correctly if you make a mistake.
+
 Sometimes you’ll end up in a situation where you’ll know more about a
-value than TypeScript does. Usually this will happen when you know the
-type of some entity could be more specific than its current type.
+value than TypeScript does.  Usually this will happen when you know
+the type of some entity could be more specific than its current type.
 
 /Type assertions/ are a way to tell the compiler “trust me, I know
 what I’m doing.”  A type assertion is like a type cast in other
@@ -1503,8 +1510,12 @@ It has no runtime impact, and is used purely by the compiler.
 TypeScript assumes that you, the programmer, have performed any
 special checks that you need.
 
+{{{heading(Type Assertion Forms)}}}
+
 Type assertions have two forms (that is, the forms are equivalent
 symantically).
+
+{{{subheading(Angle Bracket Syntax)}}}
 
 1. the “angle-bracket” syntax:
 
@@ -1513,6 +1524,8 @@ let someValue: any = "this is a string";
 
 let strLength: number = (<string>someValue).length;
 #+end_src
+
+{{{subheading(As Syntax)}}}
 
 2. the other is the as-syntax:
 
@@ -4613,6 +4626,224 @@ function createZoo(): Animal[] {
 In this example, best common type has a set of four candidates:
 =Animal=, =Rhino=, =Elephant=, and =Snake=.  Of these, =Animal= can be
 chosen by the best common type algorithm.
+* Type Compatibility
+* Advanced Types
+** Intersection Types
+** Union Types
+** Type Guards
+
+#+cindex:type guard
+#+cindex:@code{typeof}
+#+cindex:@code{instanceof}
+#+cindex:custom type guard
+#+cindex:type guard, types
+#+cindex:type guard, custom
+A /type guard/ is a statement that results in the type becoming
+narrower.  The standard type guards include =typeof= and =instanceof=;
+but if that doesn’t cover your situation, you can write your own
+custom type guard.
+
+Union types are useful for modeling situations when values can overlap
+in the types they can take on.  What happens when we need to know
+specifically whether we have a =Fish=, not a =Bird?  A common idiom in
+JavaScript to differentiate between two possible values is to check
+for the presence of a member.  As we mentioned, you can only access
+members that are guaranteed to be in all the constituents of a union
+type.
+
+#+begin_src js
+interface Bird {
+    fly();
+    layEggs();
+}
+
+interface Fish {
+    swim();
+    layEggs();
+}
+
+function getSmallPet(): Fish | Bird {
+    // ...
+}
+
+let pet = getSmallPet();
+
+// Each of these property accesses will cause an error
+if (pet.swim) {
+    pet.swim();
+}
+else if (pet.fly) {
+    pet.fly();
+}
+#+end_src
+
+#+cindex:type assertion
+To get the same code working, we’ll need to use a type assertion:
+
+#+begin_src js
+let pet = getSmallPet();
+
+if ((pet as Fish).swim) {
+    (pet as Fish).swim();
+} else if ((pet as Bird).fly) {
+    (pet as Bird).fly();
+}
+#+end_src
+
+*** Type Guards using =typeof= and =instanceof=
+
+#+cindex:@code{typeof) type guard
+{{{heading(Typeof Type Guards)}}}
+
+The =typeof= type guards are recognized in two different forms:
+
+- ~typeof v === "typename"~
+- ~typeof v !== "typename"~
+
+
+{{{noindent}}}where "typename" must be one of:
+
+-"number",
+- "string",
+- "boolean",
+- "symbol".
+
+
+You don’t need to abstract ~typeof x === "number"~ into its own
+function because TypeScript will recognize it as a type guard on its
+own.  That means we could just write these checks inline.
+
+#+begin_src js
+function padLeft(value: string, padding: string | number) {
+    if (typeof padding === "number") {
+        return Array(padding + 1).join(" ") + value;
+    }
+    if (typeof padding === "string") {
+        return padding + value;
+    }
+    throw new Error(`Expected string or number, got '${padding}'.`);
+}
+#+end_src
+
+{{{heading(Instanceof Type Guards)}}}
+
+#+cindex:@code{instanceof} type guard
+#+cindex:constructor function
+=instanceof= type guards are a way of narrowing types using their
+constructor function.  The right side of the =instanceof= needs to be
+a constructor function, and TypeScript will narrow down to:
+
+- the type of the function’s prototype property if its type is not
+  =any=
+
+- the union of types returned by that type’s construct signatures
+
+
+{{{noindent}}}in that order.
+
+The =instanceof= operator (~<object> instanceof <constructor>~) tests
+the presence of ~constructor.prototype~ in object's prototype chain.
+
+
+#+caption: instanceof Type Guard
+#+name:instanceof-type-guard
+#+begin_src js
+  interface Padder {
+      getPaddingString(): string
+  }
+
+  class SpaceRepeatingPadder implements Padder {
+      constructor(private numSpaces: number) { }
+      getPaddingString() {
+          return Array(this.numSpaces + 1).join(" ");
+      }
+  }
+
+  class StringPadder implements Padder {
+      constructor(private value: string) { }
+      getPaddingString() {
+          return this.value;
+      }
+  }
+
+  function getRandomPadder() {
+      return Math.random() < 0.5 ?
+          new SpaceRepeatingPadder(4) :
+          new StringPadder("  ");
+  }
+
+  // Type is 'SpaceRepeatingPadder | StringPadder'
+  let padder: Padder = getRandomPadder();
+
+  if (padder instanceof SpaceRepeatingPadder) {
+      padder; // type narrowed to 'SpaceRepeatingPadder'
+  }
+  if (padder instanceof StringPadder) {
+      padder; // type narrowed to 'StringPadder'
+  }
+#+end_src
+
+*** Custom Type Guards
+
+#+cindex:type guard
+Notice that we had to use type assertions several times.  It would be
+much better if once we performed the check, we could know the type of
+pet within each branch.  TypeScript has something called a /type
+guard/.  A type guard is some expression that performs a runtime check
+that guarantees the type in some scope.
+
+{{{subheading(Using Type Predicates)}}}
+
+#+cindex:type guard, define
+#+cindex:type predicate
+To define a type guard, we simply need to define a function whose
+return type is a type predicate:
+
+#+begin_src js
+function isFish(pet: Fish | Bird): pet is Fish {
+    return (pet as Fish).swim !== undefined;
+}
+#+end_src
+
+=pet is Fish= is our type predicate in this example.  A predicate
+takes the form =parameterName is Type=, where =parameterName= must be
+the name of a parameter from the current function signature.  Any time
+~isFish~ is called with some variable, TypeScript will narrow that
+variable to that specific type if the original type is compatible.
+
+#+begin_src js
+// Both calls to 'swim' and 'fly' are now okay.
+
+if (isFish(pet)) {
+    pet.swim();
+}
+else {
+    pet.fly();
+}
+#+end_src
+
+Notice that TypeScript not only knows that ~pet~ is a =Fish= in the
+~if~ branch; it also knows that in the ~else~ branch, you don’t have a
+=Fish=, so you must have a =Bird=.
+
+{{{subheading(Using the in operator)}}}
+
+The ~in~ operator now acts as a narrowing expression for types.
+
+For a ~n in x~ expression, where ~n~ is a string literal or string
+literal type and ~x~ is a union type, the =true= branch narrows to
+types which have an optional or required property ~n~, and the =false=
+branch narrows to types which have an optional or missing property
+~n~.
+
+#+begin_src js
+function move(pet: Fish | Bird) {
+    if ("swim" in pet) {
+        return pet.swim();
+    }
+    return pet.fly();
+}
+#+end_src
 * Modules
 In order to align with ECMAScript 2015’s terminology, (namely that
 ~module X {~ is equivalent to the now-preferred ~namespace X {~), in
