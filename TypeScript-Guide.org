@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-14 20:56
-#+macro:version 0.0.32
+#+date:2019-11-14 21:06
+#+macro:version 0.0.33
 
 #+texinfo:@insertcopying
 
@@ -1020,6 +1020,8 @@ module.exports = function(grunt) {
 Install the Grunt CLI tool globally:
 : yarn add global grunt-cli
 
+{{{heading(Install Development Dependencies)}}}
+
 Install TypeScript (~typescript~), Grunt (~grunt~) and ~grunt-ts~, a Grunt TypeScript plugin, in
 your project as development dependencies:
 
@@ -1029,6 +1031,8 @@ your project as development dependencies:
 yarn init -yp
 yarn add --dev typescript grunt grunt-ts
 #+end_src
+
+{{{heading(Install a Gruntfile.js)}}}
 
 Now configure Grunt to use a TypeScript plugin.  Create a
 ~Gruntfile.js~ in the project's root directory.  Limit the TypeScript
@@ -1059,6 +1063,8 @@ The Grunt configuration creates a default task that executes a custom
 =ts= task that links to the ~tsconfig.json~ file, which is the default
 TypeScript configuration file.
 
+{{{heading(Install a tsconfig.json File)}}}
+
 A minimilist ~tsconfig.json~ file can look like:
 
 #+caption:Minimilist TS Config File
@@ -1076,10 +1082,12 @@ A minimilist ~tsconfig.json~ file can look like:
 This takes every TypeScript file with the extension ~.ts~ and compiles
 them, placing them in the ~build~ folder.
 
-To test the configuration, create a simple ~index.ts~ file in an
-~src/~ folder at the root of the project.  You can type
-~console.log('test')~.  After, run grunt in a command line at the root
-of your project as well.  This will create a build folder with an
+{{{heading(Test Grunt Compilation)}}}
+
+To test the configuration, create a simple ~index.ts~ file in a ~src/~
+folder at the root of the project.  You can type
+~console.log('test')~.  After, run ~grunt~ in a command line at the
+root of your project as well.  This will create a build folder with an
 ~index.js~ file containing the same line of code.  It will also create
 the ~js.map~ file that will let you debug in your browser directly in
 TypeScript's code.
@@ -1094,11 +1102,10 @@ console.log('testing Grunt configuration');
 #+caption:Test Grunt Configuration
 #+name:test-grunt-configuration
 #+header: :dir examples/test-grunt
-#+begin_src sh :results output :exports results
+#+begin_src sh :results output :exports both
 grunt
+tree -I node_modules
 #+end_src
-
-#+RESULTS: test-grunt-configuration
 
 *** Gulp
 - [[https://github.com/ivogabe/gulp-typescript][gulp-typescript]] :: A gulp plugin for handling TypeScript compilation
