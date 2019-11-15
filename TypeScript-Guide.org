@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-14 19:33
-#+macro:version 0.0.31
+#+date:2019-11-14 20:56
+#+macro:version 0.0.32
 
 #+texinfo:@insertcopying
 
@@ -985,8 +985,9 @@ browserify()
 
 See:
 - [[https://github.com/frankwallis/duo-typescript][due-typescript]]
-*** Grunt
-TypeScript Compilation Task for GruntJS
+*** GruntJS
+**** grunt-ts
+~grunt-ts~ : TypeScript Compilation Task for GruntJS
 
 {{{heading(Install grunt-ts)}}}
 
@@ -1010,6 +1011,95 @@ module.exports = function(grunt) {
     grunt.registerTask("default", ["ts"]);
 };
 #+end_src
+
+**** GruntJS for TypeScript
+- from /TypeScript 3.0 Quick Start Quide/, by Patrick Desjardins
+  (\copy 2018)
+
+
+Install the Grunt CLI tool globally:
+: yarn add global grunt-cli
+
+Install TypeScript (~typescript~), Grunt (~grunt~) and ~grunt-ts~, a Grunt TypeScript plugin, in
+your project as development dependencies:
+
+#+caption:Install TypeScript, GruntJS, and Grunt-TS as Dev Dependencies
+#+name:install-typescript-grunt-grunt-ts-as-dev-deps
+#+begin_src sh :dir examples/test-grunt :results output :exports results
+yarn init -yp
+yarn add --dev typescript grunt grunt-ts
+#+end_src
+
+Now configure Grunt to use a TypeScript plugin.  Create a
+~Gruntfile.js~ in the project's root directory.  Limit the TypeScript
+options placed into the ~Gruntfile.js~ and instead leverage the
+TypeScript configuration file.
+
+A minimilist Grunt configuration with the sole purpose of compiling
+TypeScript into JavaScript would look like this:
+
+#+caption:Minimilist Grunt Configuration
+#+name:minimal-grunt-config
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/Gruntfile.js
+  module.exports = function(grunt) {
+   grunt.initConfig({
+     ts: {
+      default : {
+       tsconfig: './tsconfig.json'
+      }
+     }
+   });
+   grunt.loadNpmTasks("grunt-ts");
+   grunt.registerTask("default", ["ts"]);
+  };
+#+end_src
+
+The Grunt configuration creates a default task that executes a custom
+=ts= task that links to the ~tsconfig.json~ file, which is the default
+TypeScript configuration file.
+
+A minimilist ~tsconfig.json~ file can look like:
+
+#+caption:Minimilist TS Config File
+#+name:minimilist-tsconfig
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/tsconfig.json
+  {
+   "compilerOptions": {
+     "rootDir": "src",
+     "outDir": "build"
+   }
+  }
+#+end_src
+
+This takes every TypeScript file with the extension ~.ts~ and compiles
+them, placing them in the ~build~ folder.
+
+To test the configuration, create a simple ~index.ts~ file in an
+~src/~ folder at the root of the project.  You can type
+~console.log('test')~.  After, run grunt in a command line at the root
+of your project as well.  This will create a build folder with an
+~index.js~ file containing the same line of code.  It will also create
+the ~js.map~ file that will let you debug in your browser directly in
+TypeScript's code.
+
+#+caption:Test File for Grunt Configuration
+#+name:test-file-for-grunt-configuration
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/src/test-grunt.ts
+console.log('testing Grunt configuration');
+#+end_src
+
+#+caption:Test Grunt Configuration
+#+name:test-grunt-configuration
+#+header: :dir examples/test-grunt
+#+begin_src sh :results output :exports results
+grunt
+#+end_src
+
+#+RESULTS: test-grunt-configuration
+
 *** Gulp
 - [[https://github.com/ivogabe/gulp-typescript][gulp-typescript]] :: A gulp plugin for handling TypeScript compilation
      workflow.
