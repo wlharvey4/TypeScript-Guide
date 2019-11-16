@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-15 21:25
-#+macro:version 0.0.34
+#+date:2019-11-15 22:43
+#+macro:version 0.0.35
 
 #+texinfo:@insertcopying
 
@@ -17,7 +17,7 @@ TypeScript is being developed on GitHub and is open source.
 
 - https://github.com/Microsoft/TypeScript
 
-** Installation
+** Gulp Installation
 #+cindex:installation
 #+cindex:updating
 
@@ -1165,6 +1165,55 @@ gulp
 tree -I node_modules
 #+end_src
 
+**** TypeScript Node and Gulp---ts-node
+- [[https://www.npmjs.com/package/ts-node][ts-node]] :: TypeScript execution and REPL for node.js, with source
+     map support.
+
+
+By installing the ~ts-node~ module, you can compile TypeScript into
+JavaScript with Gulp.  Install ~ts-node~, ~@types/node~[fn:1], and
+~typescript~ locally.
+
+#+caption:TypeScript Node and Gulp Installation
+#+name:typescript-node-gulp-installation
+#+header: :dir examples/test-tsnode
+#+begin_src sh :results output :exports both
+yarn init -yp
+yarn add --dev gulp ts-node typescript @types/node
+#+end_src
+
+Create a simple Gulpfile.  This Gulpfile simply pipes TypeScript files
+through ~gulp~ into the ~build~ directory.
+
+#+caption:TypeScript Node Gulpfile
+#+name:typescript-node-gulpfile
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-tsnode/Gulpfile.ts
+var gulp = require("gulp");
+
+exports.default = function () {
+  return gulp.src("src/*.ts").pipe(gulp.dest("build/local"));
+};
+#+end_src
+
+This is the TypeScript file that needs to be transpiled.
+
+#+caption:Basic TypeScript Node File
+#+name:basic-typescript-node-file
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-tsnode/src/basic.ts
+console.log('Hello TypeScript Node');
+#+end_src
+
+Run Gulp with ~gulp~.
+
+#+caption:Run Gulp Under TypeScript Node
+#+name:run-gulp-under-typescript-node
+#+header: :dir examples/test-tsnode
+#+begin_src sh :results output :exports both
+gulp
+#+end_src
+
 **** Using Gulp to Compile TypeScript
 - from /TypeScript 3.0 Quick Start Quide/, by Patrick Desjardins
   (\copy 2018)
@@ -1194,7 +1243,6 @@ Grunt uses configuration files to perform tasks whereas ~gulp~
 requires its build file to be coded.  In Grunt, each plugin needs to
 be configured to match its input location to the previous plugin’s
 output. In ~gulp~, the plugins are automatically pipe-lined
-
 *** Jspm
 - [[https://github.com/Microsoft/TypeScriptSamples/tree/master/jspm][jspm]]
 *** Webpack
@@ -5672,6 +5720,11 @@ Copyright {{{noindent}}}\copy 2019 {{{author}}} {{{theVersion}}}
 #+texinfo_printed_title:TypeScript Guide in Print
 
 * Local Variables                                                  :noexport:
+
+* Footnotes
+
+[fn:1]~@types/node~ is necessary for the ~require~ keyword and the
+~exports~ object variable. 
 # Local Variables:
 # time-stamp-pattern:"8/^\\#\\+date:%:y-%02m-%02d %02H:%02M$"
 # End:
