@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-14 21:06
-#+macro:version 0.0.33
+#+date:2019-11-15 21:25
+#+macro:version 0.0.34
 
 #+texinfo:@insertcopying
 
@@ -1108,28 +1108,93 @@ tree -I node_modules
 #+end_src
 
 *** Gulp
+- [[https://www.npmjs.com/package/gulp][gulp]] :: Gulp is a toolkit that helps you automate painful or
+     time-consuming tasks in your development workflow.
+
+- [[https://www.npmjs.com/package/gulp-cli][gulp-cli]] :: Command Line Utility for Gulp
+  : $ gulp [flags] <task> <task>...
+
 - [[https://github.com/ivogabe/gulp-typescript][gulp-typescript]] :: A gulp plugin for handling TypeScript compilation
-     workflow.
+     workflow.  The plugin exposes TypeScript's compiler options to
+     gulp using TypeScript API.
 
-{{{heading(Install gulp-typescript)}}}
+{{{heading(Install typescript, gulp, and gulp-typescript)}}}
 
-: npm install gulp-typescript
+#+caption:Gulp and Tooling Installation
+#+name:gulp-tooling-installation
+#+begin_src sh :results silent :exports both :dir examples/test-gulp
+yarn init -yp
+yarn add --dev typescript gulp gulp-typescript
+#+end_src
 
 {{{heading(Basic gulpfile.js)}}}
 
-#+begin_src js
+Create a ~Gulpfile.js~ in the root of the project.
+
+#+caption:A Test Gulpfile
+#+name:test-gulpfile.js
+#+header: :mkdirp yes
+#+begin_src js :tangle examples/test-gulp/Gulpfile.js
 var gulp = require("gulp");
 var ts = require("gulp-typescript");
 
-gulp.task("default", function () {
+exports.default = function () {
     var tsResult = gulp.src("src/*.ts")
         .pipe(ts({
               noImplicitAny: true,
               out: "output.js"
         }));
-    return tsResult.js.pipe(gulp.dest("built/local"));
-});
+    return tsResult.js.pipe(gulp.dest("build/local"));
+};
 #+end_src
+
+#+caption:Basic File to Test Gulp
+#+name:basic-file-to-test-gulp
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-gulp/src/basic.ts
+console.log('Testing gulp');
+#+end_src
+
+#+caption:Test Gulp
+#+name:test-gulp
+#+begin_src sh :results output :exports both :dir examples/test-gulp
+gulp
+#+end_src
+
+#+begin_src sh :results output :exports results
+tree -I node_modules
+#+end_src
+
+**** Using Gulp to Compile TypeScript
+- from /TypeScript 3.0 Quick Start Quide/, by Patrick Desjardins
+  (\copy 2018)
+
+
+~gulp.js~ is a build tool in JavaScript built on node streams.  These
+streams facilitate the connection of file operations through
+pipelines.  ~gulp~ reads the file system and pipes the data at hand
+from one single-purposed plugin to another through the ~.pipe()~
+operator, doing one task at a time.  ~gulp~ requires knowledge of
+JavaScript and coding to define its tasks.  ~gulp~ is a build system
+which means apart from running tasks, it is also capable of copying
+files from one location to another, compiling, deploying, creating
+notifications, unit testing, linting, etc.
+
+Grunt runs tasks by transforming files and saves as new ones in
+temporary folders and the output of one task is taken as input for
+another and so on until the output reaches the destination
+folder. This involves a lot of I/O calls and creation of many
+temporary files.
+
+Whereas ~gulp~ streams through the file system and does not require
+any of these temporary locations decreasing the number of I/O calls
+thus, improving performance.
+
+Grunt uses configuration files to perform tasks whereas ~gulp~
+requires its build file to be coded.  In Grunt, each plugin needs to
+be configured to match its input location to the previous plugin’s
+output. In ~gulp~, the plugins are automatically pipe-lined
+
 *** Jspm
 - [[https://github.com/Microsoft/TypeScriptSamples/tree/master/jspm][jspm]]
 *** Webpack
@@ -5526,9 +5591,11 @@ Format options can be specified in multiple ways.
 :PROPERTIES:
 :appendix: t
 :END:
-#+name:makefile
-#+begin_src makefile -n :tangle makefile
+#+caption:Makefile
+#+name:Makefile
+#+begin_src makefile -n :tangle Makefile
 SOURCE=TypeScript-Guide
+DIRS = examples
 
 info:	$(SOURCE).texi
 	makeinfo $(SOURCE).texi
@@ -5537,6 +5604,8 @@ pdf:	$(SOURCE).texi
 	pdftexi2dvi -q $(SOURCE).texi; \
 	open $(SOURCE).pdf
 
+clean-dirs:
+	rm -rf $(DIRS)
 clean-texi:
 	-rm *.texi
 clean-info:
@@ -5546,7 +5615,7 @@ clean-pdf:
 clean-aux:
 	-rm *.{aux,toc,log,cp,cps,pg,pgs,fn,fns}
 
-clean: clean-texi clean-info clean-pdf clean-aux
+clean: clean-texi clean-info clean-pdf clean-aux clean-dirs
 
 phony:clean-texi clean-info clean-pdf clean-aux clean
 #+end_src
