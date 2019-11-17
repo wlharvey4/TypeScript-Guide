@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-17 09:10
-#+macro:version 0.0.36
+#+date:2019-11-17 09:55
+#+macro:version 0.0.37
 
 #+texinfo:@insertcopying
 
@@ -2746,461 +2746,53 @@ Note that the function ~pickCard(x): any~ piece is not part of the
 overload list, so it only has two overloads: one that takes an object
 and one that takes a number.  Calling ~pickCard~ with any other
 parameter types would cause an error.
-* Variables
-** Var
-*** Var Scoping Rules
-{{{heading(Function Scope)}}}
-
-#+cindex:function scope
-#+cindex:@code{var} declaration
-=var= declarations are accessible anywhere within their containing
-function, module, namespace, or global scope regardless of the
-containing block.  Parameters are also function scoped.
-
-{{{subheading(Problems with Function Scope)}}}
-
-One problem they exacerbate is the fact that it is not an error to
-declare the same variable multiple times.  Variables can be
-accidentally overwritten this way.
-
-This also occurs within for-loops:
-
-#+begin_src js
-for (var i = 0; i < 10; i++) {
-    setTimeout(function() { console.log(i); }, 100 * i);
-}
-#+end_src
-
-{{{noindent}}}which produces the following output:
-
-#+begin_example
-10
-10
-10
-10
-10
-10
-10
-10
-10
-10
-#+end_example
-
-~setTimeout~ will run a function after some number of milliseconds,
-but only after the for loop has stopped executing; by the time the for
-loop has stopped executing, the value of ~i~ is 10.  So each time the
-given function gets called, it will print out 10!
-
-#+cindex:IIFE
-#+cindex:immediately invoked function expression
-A common work around is to use an IIFE - an Immediately Invoked
-Function Expression - to capture ~i~ at each iteration:
-
-#+begin_src js
-for (var i = 0; i < 10; i++) {
-    // capture the current state of 'i'
-    // by invoking a function with its current value
-    (function(i) {
-        setTimeout(function() { console.log(i); }, 100 * i);
-    })(i);
-}
-#+end_src
-
-The ~i~ in the parameter list actually shadows the ~i~ declared in the
-for loop, and which is used to invoke the function.  The function
-closes over the value of the parameter ~i~ when it is invoked, and
-will be available to the ~setTimeout~ function when it runs much
-later.
-
-** Let
-#+cindex:lexical scope
-#+cindex:block scope
-#+cindex:local variable
-The =let= statement declares a block scope local variable, optionally
-initializing it to a value.  The other difference between =var= and
-=let= is that the latter is initialized to value only when parser
-evaluates it.  The =let= does not create properties of the window
-object when declared globally.  The main difference between =var= and
-=let= is that the scope of a =var= variable is the entire enclosing
-function.
-
-#+begin_src js
-var x = 'global';
-let y = 'global';
-console.log(this.x); // "global"
-console.log(this.y); // undefined
-#+end_src
-
-When a variable is declared using ~let~, it uses what some call
-lexical-scoping or block-scoping.  Unlike variables declared with
-~var~, whose scopes leak out to their containing function,
-block-scoped variables are not visible outside of their nearest
-containing block or =for-loop=.
-
-#+cindex:temporal dead zone
-Another property of block-scoped variables is that they can’t be read
-or written to before they’re actually declared.  While these variables
-are “present” throughout their scope, all points up until their
-declaration are part of their temporal dead zone.  This is just a
-sophisticated way of saying you can’t access them before the ~let~
-statement, and luckily TypeScript will let you know that.
-
-You can still capture a block-scoped variable before it’s declared.
-The only catch is that it’s illegal to call that function before the
-declaration.  If targeting ES2015, a modern runtime will throw an
-error; however, right now TypeScript is permissive and won’t report
-this as an error.
-
-#+begin_src js
-function foo() {
-    // okay to capture 'a'
-    return a;
-}
-
-// illegal call 'foo' before 'a' is declared
-// runtimes should throw an error here
-foo();
-
-let a;
-#+end_src
-
-*** Emulate Private Members
-#+cindex:private member
-In dealing with constructors it is possible to use the ~let~ bindings
-to share one or more private members without using closures:
-
-#+caption:Emulate private members using let
-#+name:emulate-private-members-using-let
-#+begin_src js -n
-var Thing;
-
-{ // BLOCK SCOPE
-  let privateScope = new WeakMap(); // PRIVATE MEMBERS
-  let counter = 0;
-
-  Thing = function() {
-    this.someProperty = 'foo';
-
-    privateScope.set(this, {
-      hidden: ++counter,
-    });
-  };
-
-  Thing.prototype.showPublic = function() {
-    return this.someProperty;
-  };
-
-  Thing.prototype.showPrivate = function() {
-    return privateScope.get(this).hidden;
-  };
-}
-
-console.log(typeof privateScope); // "undefined"
-
-var thing = new Thing();
-
-console.log(thing); // Thing {someProperty: "foo"}
-
-thing.showPublic(); // "foo"
-
-thing.showPrivate(); // 1
-#+end_src
-
-The same privacy pattern with closures over local variables can be
-created with ~var~, but those need a function scope (typically an IIFE
-in the module pattern) instead of just a block scope like in the
-example above.
-
-*** Temporal Dead Zone
-Unlike variables declared with ~var~, which will start with the value
-undefined, ~let~ variables are not initialized until their definition
-is evaluated.  Accessing the variable before the initialization
-results in a =ReferenceError=.  The variable is in a "temporal dead
-zone" from the start of the block until the initialization is
-processed.
-
-Unlike with simply undeclared variables and variables that hold a
-value of =undefined=, using the ~typeof~ operator to check for the
-type of a variable in that variable's TDZ will throw a
-=ReferenceError=:
-
-** Const
-~const~ declarations are another way of declaring variables.  They are
-like ~let~ declarations but, as their name implies, their value cannot
-be changed once they are bound.  In other words, they have the same
-scoping rules as ~let~, but you can’t re-assign to them.  This should
-not be confused with the idea that the values they refer to are
-immutable.  Unless you take specific measures to avoid it, the
-internal state of a ~const~ variable is still modifiable.
-Fortunately, TypeScript allows you to specify that members of an
-object are =readonly=
-
-{{{heading(Principle of Least Privilege)}}}
-
-#+cindex:least privilege
-Applying the principle of /least privilege/, all declarations other
-than those you plan to modify should use ~const~.  The rationale is
-that if a variable didn’t need to get written to, others working on
-the same codebase shouldn’t automatically be able to write to the
-object, and will need to consider whether they really need to reassign
-to the variable.  Using ~const~ also makes code more predictable when
-reasoning about flow of data.
-** Destructuring
-*** Array Destructuring
-#+cindex:destructuring
-#+cindex:array destructuring
-The simplest form of destructuring is array destructuring assignment:
-
-#+begin_src js
-let input = [1, 2];
-let [first, second] = input; // first := 1, second := 2
-#+end_src
-
-This creates two new variables named first and second.  This is
-equivalent to using indexing, but is much more convenient:
-
-#+begin_src js
-first = input[0];
-second = input[1];
-#+end_src
-
-Destructuring works with already-declared variables as well:
-
-#+begin_src js
-// swap variables
-[first, second] = [second, first];
-#+end_src
-
-And with parameters to a function:
-
-#+begin_src js
-function f([first, second]: [number, number]) {
-    console.log(first);
-    console.log(second);
-}
-f([1, 2]);
-#+end_src
-
-You can create a variable for the remaining items in a list using the
-syntax ...:
-
-#+begin_src js
-let [first, ...rest] = [1, 2, 3, 4];
-console.log(first); // outputs 1
-console.log(rest); // outputs [ 2, 3, 4 ]
-#+end_src
-
-Of course, since this is JavaScript, you can just ignore trailing
-elements you don’t care about:
-
-#+begin_src js
-let [first] = [1, 2, 3, 4];
-console.log(first); // outputs 1
-#+end_src
-
-Or other elements:
-
-#+begin_src js
-let [, second, , fourth] = [1, 2, 3, 4];
-console.log(second); // outputs 2
-console.log(fourth); // outputs 4
-#+end_src
-
-*** Tuple Destructuring
-#+cindex:destructuring
-#+cindex:tuple destructuring
-Tuples may be destructured like arrays; the destructuring variables
-get the types of the corresponding tuple elements:
-
-#+begin_src js
-let tuple: [number, string, boolean] = [7, "hello", true];
-
-let [a, b, c] = tuple; // a: number, b: string, c: boolean
-#+end_src
-
-It’s an error to destructure a tuple beyond the range of its elements.
-As with arrays, you can destructure the rest of the tuple with ..., to
-get a shorter tuple; and ignore trailing elements, or other elements.
-
-*** Object Destructuring
-#+cindex:destructuing
-#+cindex:object destructuring
-You can also destructure objects:
-
-#+begin_src js
-let o = {
-    a: "foo",
-    b: 12,
-    c: "bar"
-};
-Let { a, b } = o;
-#+end_src
-
-This creates new variables ~a~ and ~b~ from ~o.a~ and ~o.b~.  Notice
-that you can skip ~c~ if you don’t need it.
-
-Like array destructuring, you can have assignment without declaration:
-
-#+begin_src js
-({ a, b } = { a: "baz", b: 101 });
-#+end_src
-
-Notice that we had to surround this statement with
-parentheses. JavaScript normally parses a ={= as the start of block.
-
-You can create a variable for the remaining items in an object using
-the syntax ...:
-
-#+begin_src js
-let { a, ...passthrough } = o;
-let total = passthrough.b + passthrough.c.length;
-#+end_src
-
-{{{heading(Property Renaming)}}}
-
-#+pindex:property renaming
-You can also give different names to properties:
-
-#+begin_src js
-let { a: newName1, b: newName2 } = o;
-#+end_src
-
-You can read ~a: newName1~ as “a as newName1”.  The direction is
-left-to-right, as if you had written:
-
-#+begin_src js
-let newName1 = o.a;
-let newName2 = o.b;
-#+end_src
-
-Confusingly, the colon here does not indicate the type.  The type, if
-you specify it, still needs to be written after the entire
-destructuring:
-
-#+begin_src js
-let { a, b }: { a: string, b: number } = o;
-#+end_src
-
-{{{heading(Default Values)}}}
-
-#+cindex:default values
-Default values let you specify a default value in case a property is
-=undefined=:
-
-#+begin_src js
-function keepWholeObject(wholeObject: { a: string, b?: number }) {
-    let { a, b = 1001 } = wholeObject;
-}
-#+end_src
-
-In this example the ~b?~ indicates that ~b~ is optional, so it may be
-=undefined=.  ~keepWholeObject~ now has a variable for ~wholeObject as
-well as the properties ~a~ and ~b~, even if ~b~ is =undefined=.
-
-*** Function Declarations and Destructuring
-#+cindex:destructuring
-#+cindex:function declarations and destructuring
-Destructuring also works in function declarations. For simple cases
-this is straightforward:
-
-#+begin_src js
-type C = { a: string, b?: number }
-function f({ a, b }: C): void {
-    // ...
-}
-#+end_src
-
-But specifying defaults is more common for parameters, and getting
-defaults right with destructuring can be tricky.  First of all, you
-need to remember to put the pattern before the default value.
-
-#+begin_src js
-function f({ a="", b=0 } = {}): void {
-    // ...
-}
-f();
-#+end_src
-
-Then, you need to remember to give a default for optional properties
-on the destructured property instead of the main initializer.  Remember
-that ~C~ was defined with ~b~ optional:
-
-#+begin_src js
-function f({ a, b=0 } = { a: "" }): void {
-    // ...
-}
-f({ a: "yes" }); // ok, default b = 0
-f(); // ok, default to { a: "" }, which then defaults b = 0
-f({}); // error, 'a' is required if you supply an argument
-#+end_src
-
-Use destructuring with care.  As the previous example demonstrates,
-anything but the simplest destructuring expression is confusing.  This
-is especially true with deeply nested destructuring, which gets really
-hard to understand even without piling on renaming, default values,
-and type annotations.  Try to keep destructuring expressions small and
-simple.  You can always write the assignments that destructuring would
-generate yourself.
-** Spreading
-#+cindex:@code{spread} operator
-#+cindex:spreading
-The =spread= operator is the opposite of destructuring.  It allows you
-to spread an array into another array, or an object into another
-object.  For example:
-
-#+begin_src js
-let first = [1, 2];
-let second = [3, 4];
-let bothPlus = [0, ...first, ...second, 5];
-#+end_src
-
-#+cindex:shallow copy, @code{spread} operator
-This gives ~bothPlus~ the value =[0, 1, 2, 3, 4, 5]=.  Spreading
-creates a shallow copy of first and second.  They are not changed by
-the spread.
-
-You can also spread objects:
-
-#+begin_src js
-let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
-let search = { ...defaults, food: "rich" };
-#+end_src
-
-Now search is ={ food: "rich", price: "$$", ambiance: "noisy" }=.
-Object spreading is more complex than array spreading.  Like array
-spreading, it proceeds from left-to-right, but the result is still an
-object.  This means that properties that come later in the spread
-object overwrite properties that come earlier.  So if we modify the
-previous example to spread at the end:
-
-#+begin_src js
-let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
-let search = { food: "rich", ...defaults };
-#+end_src
-
-Then the =food= property in defaults overwrites =food: "rich"=, which
-is not what we want in this case.
-
-Object spread also has a couple of other surprising limits.  First, it
-only includes an objects’ own, enumerable properties.  Basically, that
-means you lose methods when you spread instances of an object:
-
-#+begin_src js
-class C {
-  p = 12;
-  m() {
-  }
-}
-let c = new C();
-let clone = { ...c };
-clone.p; // ok
-clone.m(); // error!
-#+end_src
-
-Second, the Typescript compiler doesn’t allow spreads of type
-parameters from generic functions.  That feature is expected in future
-versions of the language.
 * Interfaces
+Interfaces are a way of representing complex types about any object.
+They have absolutely no runtime consequences because JavaScript does
+not include any sort of runtime type checking.  Interfaces are
+analyzed at compile time and then omitted from the resulting
+JavaScript.  Interfaces create a contract for developers to use when
+developing new objects or writing methods to interact with existing
+ones.  Interfaces are named types that contain a list of members.
+
+** Example of a Simple Interface and Inheritance
+Here is an example of a simple interface:
+
+#+begin_src js -n
+  interface IPoint {
+      x: number;
+      y: number;
+  }
+#+end_src
+
+You use the ~interface~ keyword to start the interface declaration.
+Then you give the interface a name to reference the code.
+
+A simple naming convention can improve the readability of code when
+using interfaces.  Interfaces can be given the format ~I<name>~ and
+object types just use the ~<name>~, e.g., ~IFoo~ and ~Foo~.
+
+The interface's declaration body contains just a list of members and
+functions and their types.  Interface members can only be instance
+members of an object.
+
+Interfaces have the ability to inherit from base types.  This
+interface inheritance allows interfaces to be extended from existing
+interfaces into a more enhanced version as well as merge separate
+interfaces together.  To create an inheritance chain, interfaces use
+the ~extends~ clause.  The ~extends~ clause is followed by a
+comma-separated list of types that the interface will merge with.
+
+: interface IFoo extends IBar, IQuux { body }
+
+Interfaces can be referenced in code as type parameters or type
+declarations.  Further, interface declarations are open-ended and will
+implicitly merge together if they have the same if they have the same
+type name.  The TypeScript compiler also implements a duck typing
+system that allows you to create objects on the fly while keeping type
+safety.
+
+** Interface Introduction and Duck Typing
 #+cindex:interfaces, introduction
 #+cindex:duck typing
 #+cindex:structural subtyping
@@ -3882,6 +3474,44 @@ subtypes of =SelectableControl= (because they both inherit from
 =Control= and have a =select= method), but the =Image= and =Location=
 classes are not.
 * Classes
+Classes consist of a variety of different properties and members.
+These members can be either public or private, and static or instance.
+
+** Introduction to Classes
+Creating classes in Typescript is essentially the same as creating
+interfaces.  Here is a simple =Point= class that keeps track of an ~x~
+and ~y~ position.
+
+#+begin_src js -n
+  class Point {
+      public x: number;
+      public y: number;
+      constructor(x: number, y = 0) {
+          this.x = x;
+          this.y = y;
+      }
+  }
+#+end_src
+
+This example includes a default value for the property ~y~.
+TypeScript treats parameters with default values as optional
+parameters.  This provides a simple method for ensuring you are always
+operating on instantiated objects.
+
+Here is the JavaScript output for the =Point= class:
+
+#+begin_src js -n
+  var Point = (function () {
+      function Point(x, y) {
+          if (typeof y == "undefined") { y = 0; }
+          this.x = x;
+          this.y = y;
+      }
+      return Point;
+  })();
+#+end_src
+
+** A Simple Class-Based Example
 #+cindex:ECMAScript 2015
 #+cindex:class-based construction
 Starting with ECMAScript 2015, also known as ECMAScript 6, JavaScript
@@ -4510,6 +4140,460 @@ interface Point3d extends Point {
 
 let point3d: Point3d = {x: 1, y: 2, z: 3};
 #+end_src
+* Variables
+** Var
+*** Var Scoping Rules
+{{{heading(Function Scope)}}}
+
+#+cindex:function scope
+#+cindex:@code{var} declaration
+=var= declarations are accessible anywhere within their containing
+function, module, namespace, or global scope regardless of the
+containing block.  Parameters are also function scoped.
+
+{{{subheading(Problems with Function Scope)}}}
+
+One problem they exacerbate is the fact that it is not an error to
+declare the same variable multiple times.  Variables can be
+accidentally overwritten this way.
+
+This also occurs within for-loops:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    setTimeout(function() { console.log(i); }, 100 * i);
+}
+#+end_src
+
+{{{noindent}}}which produces the following output:
+
+#+begin_example
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+#+end_example
+
+~setTimeout~ will run a function after some number of milliseconds,
+but only after the for loop has stopped executing; by the time the for
+loop has stopped executing, the value of ~i~ is 10.  So each time the
+given function gets called, it will print out 10!
+
+#+cindex:IIFE
+#+cindex:immediately invoked function expression
+A common work around is to use an IIFE - an Immediately Invoked
+Function Expression - to capture ~i~ at each iteration:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    // capture the current state of 'i'
+    // by invoking a function with its current value
+    (function(i) {
+        setTimeout(function() { console.log(i); }, 100 * i);
+    })(i);
+}
+#+end_src
+
+The ~i~ in the parameter list actually shadows the ~i~ declared in the
+for loop, and which is used to invoke the function.  The function
+closes over the value of the parameter ~i~ when it is invoked, and
+will be available to the ~setTimeout~ function when it runs much
+later.
+
+** Let
+#+cindex:lexical scope
+#+cindex:block scope
+#+cindex:local variable
+The =let= statement declares a block scope local variable, optionally
+initializing it to a value.  The other difference between =var= and
+=let= is that the latter is initialized to value only when parser
+evaluates it.  The =let= does not create properties of the window
+object when declared globally.  The main difference between =var= and
+=let= is that the scope of a =var= variable is the entire enclosing
+function.
+
+#+begin_src js
+var x = 'global';
+let y = 'global';
+console.log(this.x); // "global"
+console.log(this.y); // undefined
+#+end_src
+
+When a variable is declared using ~let~, it uses what some call
+lexical-scoping or block-scoping.  Unlike variables declared with
+~var~, whose scopes leak out to their containing function,
+block-scoped variables are not visible outside of their nearest
+containing block or =for-loop=.
+
+#+cindex:temporal dead zone
+Another property of block-scoped variables is that they can’t be read
+or written to before they’re actually declared.  While these variables
+are “present” throughout their scope, all points up until their
+declaration are part of their temporal dead zone.  This is just a
+sophisticated way of saying you can’t access them before the ~let~
+statement, and luckily TypeScript will let you know that.
+
+You can still capture a block-scoped variable before it’s declared.
+The only catch is that it’s illegal to call that function before the
+declaration.  If targeting ES2015, a modern runtime will throw an
+error; however, right now TypeScript is permissive and won’t report
+this as an error.
+
+#+begin_src js
+function foo() {
+    // okay to capture 'a'
+    return a;
+}
+
+// illegal call 'foo' before 'a' is declared
+// runtimes should throw an error here
+foo();
+
+let a;
+#+end_src
+
+*** Emulate Private Members
+#+cindex:private member
+In dealing with constructors it is possible to use the ~let~ bindings
+to share one or more private members without using closures:
+
+#+caption:Emulate private members using let
+#+name:emulate-private-members-using-let
+#+begin_src js -n
+var Thing;
+
+{ // BLOCK SCOPE
+  let privateScope = new WeakMap(); // PRIVATE MEMBERS
+  let counter = 0;
+
+  Thing = function() {
+    this.someProperty = 'foo';
+
+    privateScope.set(this, {
+      hidden: ++counter,
+    });
+  };
+
+  Thing.prototype.showPublic = function() {
+    return this.someProperty;
+  };
+
+  Thing.prototype.showPrivate = function() {
+    return privateScope.get(this).hidden;
+  };
+}
+
+console.log(typeof privateScope); // "undefined"
+
+var thing = new Thing();
+
+console.log(thing); // Thing {someProperty: "foo"}
+
+thing.showPublic(); // "foo"
+
+thing.showPrivate(); // 1
+#+end_src
+
+The same privacy pattern with closures over local variables can be
+created with ~var~, but those need a function scope (typically an IIFE
+in the module pattern) instead of just a block scope like in the
+example above.
+
+*** Temporal Dead Zone
+Unlike variables declared with ~var~, which will start with the value
+undefined, ~let~ variables are not initialized until their definition
+is evaluated.  Accessing the variable before the initialization
+results in a =ReferenceError=.  The variable is in a "temporal dead
+zone" from the start of the block until the initialization is
+processed.
+
+Unlike with simply undeclared variables and variables that hold a
+value of =undefined=, using the ~typeof~ operator to check for the
+type of a variable in that variable's TDZ will throw a
+=ReferenceError=:
+
+** Const
+~const~ declarations are another way of declaring variables.  They are
+like ~let~ declarations but, as their name implies, their value cannot
+be changed once they are bound.  In other words, they have the same
+scoping rules as ~let~, but you can’t re-assign to them.  This should
+not be confused with the idea that the values they refer to are
+immutable.  Unless you take specific measures to avoid it, the
+internal state of a ~const~ variable is still modifiable.
+Fortunately, TypeScript allows you to specify that members of an
+object are =readonly=
+
+{{{heading(Principle of Least Privilege)}}}
+
+#+cindex:least privilege
+Applying the principle of /least privilege/, all declarations other
+than those you plan to modify should use ~const~.  The rationale is
+that if a variable didn’t need to get written to, others working on
+the same codebase shouldn’t automatically be able to write to the
+object, and will need to consider whether they really need to reassign
+to the variable.  Using ~const~ also makes code more predictable when
+reasoning about flow of data.
+** Destructuring
+*** Array Destructuring
+#+cindex:destructuring
+#+cindex:array destructuring
+The simplest form of destructuring is array destructuring assignment:
+
+#+begin_src js
+let input = [1, 2];
+let [first, second] = input; // first := 1, second := 2
+#+end_src
+
+This creates two new variables named first and second.  This is
+equivalent to using indexing, but is much more convenient:
+
+#+begin_src js
+first = input[0];
+second = input[1];
+#+end_src
+
+Destructuring works with already-declared variables as well:
+
+#+begin_src js
+// swap variables
+[first, second] = [second, first];
+#+end_src
+
+And with parameters to a function:
+
+#+begin_src js
+function f([first, second]: [number, number]) {
+    console.log(first);
+    console.log(second);
+}
+f([1, 2]);
+#+end_src
+
+You can create a variable for the remaining items in a list using the
+syntax ...:
+
+#+begin_src js
+let [first, ...rest] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+console.log(rest); // outputs [ 2, 3, 4 ]
+#+end_src
+
+Of course, since this is JavaScript, you can just ignore trailing
+elements you don’t care about:
+
+#+begin_src js
+let [first] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+#+end_src
+
+Or other elements:
+
+#+begin_src js
+let [, second, , fourth] = [1, 2, 3, 4];
+console.log(second); // outputs 2
+console.log(fourth); // outputs 4
+#+end_src
+
+*** Tuple Destructuring
+#+cindex:destructuring
+#+cindex:tuple destructuring
+Tuples may be destructured like arrays; the destructuring variables
+get the types of the corresponding tuple elements:
+
+#+begin_src js
+let tuple: [number, string, boolean] = [7, "hello", true];
+
+let [a, b, c] = tuple; // a: number, b: string, c: boolean
+#+end_src
+
+It’s an error to destructure a tuple beyond the range of its elements.
+As with arrays, you can destructure the rest of the tuple with ..., to
+get a shorter tuple; and ignore trailing elements, or other elements.
+
+*** Object Destructuring
+#+cindex:destructuing
+#+cindex:object destructuring
+You can also destructure objects:
+
+#+begin_src js
+let o = {
+    a: "foo",
+    b: 12,
+    c: "bar"
+};
+Let { a, b } = o;
+#+end_src
+
+This creates new variables ~a~ and ~b~ from ~o.a~ and ~o.b~.  Notice
+that you can skip ~c~ if you don’t need it.
+
+Like array destructuring, you can have assignment without declaration:
+
+#+begin_src js
+({ a, b } = { a: "baz", b: 101 });
+#+end_src
+
+Notice that we had to surround this statement with
+parentheses. JavaScript normally parses a ={= as the start of block.
+
+You can create a variable for the remaining items in an object using
+the syntax ...:
+
+#+begin_src js
+let { a, ...passthrough } = o;
+let total = passthrough.b + passthrough.c.length;
+#+end_src
+
+{{{heading(Property Renaming)}}}
+
+#+pindex:property renaming
+You can also give different names to properties:
+
+#+begin_src js
+let { a: newName1, b: newName2 } = o;
+#+end_src
+
+You can read ~a: newName1~ as “a as newName1”.  The direction is
+left-to-right, as if you had written:
+
+#+begin_src js
+let newName1 = o.a;
+let newName2 = o.b;
+#+end_src
+
+Confusingly, the colon here does not indicate the type.  The type, if
+you specify it, still needs to be written after the entire
+destructuring:
+
+#+begin_src js
+let { a, b }: { a: string, b: number } = o;
+#+end_src
+
+{{{heading(Default Values)}}}
+
+#+cindex:default values
+Default values let you specify a default value in case a property is
+=undefined=:
+
+#+begin_src js
+function keepWholeObject(wholeObject: { a: string, b?: number }) {
+    let { a, b = 1001 } = wholeObject;
+}
+#+end_src
+
+In this example the ~b?~ indicates that ~b~ is optional, so it may be
+=undefined=.  ~keepWholeObject~ now has a variable for ~wholeObject as
+well as the properties ~a~ and ~b~, even if ~b~ is =undefined=.
+
+*** Function Declarations and Destructuring
+#+cindex:destructuring
+#+cindex:function declarations and destructuring
+Destructuring also works in function declarations. For simple cases
+this is straightforward:
+
+#+begin_src js
+type C = { a: string, b?: number }
+function f({ a, b }: C): void {
+    // ...
+}
+#+end_src
+
+But specifying defaults is more common for parameters, and getting
+defaults right with destructuring can be tricky.  First of all, you
+need to remember to put the pattern before the default value.
+
+#+begin_src js
+function f({ a="", b=0 } = {}): void {
+    // ...
+}
+f();
+#+end_src
+
+Then, you need to remember to give a default for optional properties
+on the destructured property instead of the main initializer.  Remember
+that ~C~ was defined with ~b~ optional:
+
+#+begin_src js
+function f({ a, b=0 } = { a: "" }): void {
+    // ...
+}
+f({ a: "yes" }); // ok, default b = 0
+f(); // ok, default to { a: "" }, which then defaults b = 0
+f({}); // error, 'a' is required if you supply an argument
+#+end_src
+
+Use destructuring with care.  As the previous example demonstrates,
+anything but the simplest destructuring expression is confusing.  This
+is especially true with deeply nested destructuring, which gets really
+hard to understand even without piling on renaming, default values,
+and type annotations.  Try to keep destructuring expressions small and
+simple.  You can always write the assignments that destructuring would
+generate yourself.
+** Spreading
+#+cindex:@code{spread} operator
+#+cindex:spreading
+The =spread= operator is the opposite of destructuring.  It allows you
+to spread an array into another array, or an object into another
+object.  For example:
+
+#+begin_src js
+let first = [1, 2];
+let second = [3, 4];
+let bothPlus = [0, ...first, ...second, 5];
+#+end_src
+
+#+cindex:shallow copy, @code{spread} operator
+This gives ~bothPlus~ the value =[0, 1, 2, 3, 4, 5]=.  Spreading
+creates a shallow copy of first and second.  They are not changed by
+the spread.
+
+You can also spread objects:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { ...defaults, food: "rich" };
+#+end_src
+
+Now search is ={ food: "rich", price: "$$", ambiance: "noisy" }=.
+Object spreading is more complex than array spreading.  Like array
+spreading, it proceeds from left-to-right, but the result is still an
+object.  This means that properties that come later in the spread
+object overwrite properties that come earlier.  So if we modify the
+previous example to spread at the end:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { food: "rich", ...defaults };
+#+end_src
+
+Then the =food= property in defaults overwrites =food: "rich"=, which
+is not what we want in this case.
+
+Object spread also has a couple of other surprising limits.  First, it
+only includes an objects’ own, enumerable properties.  Basically, that
+means you lose methods when you spread instances of an object:
+
+#+begin_src js
+class C {
+  p = 12;
+  m() {
+  }
+}
+let c = new C();
+let clone = { ...c };
+clone.p; // ok
+clone.m(); // error!
+#+end_src
+
+Second, the Typescript compiler doesn’t allow spreads of type
+parameters from generic functions.  That feature is expected in future
+versions of the language.
 * Generics
 * Enums
 #+cindex:enum type
