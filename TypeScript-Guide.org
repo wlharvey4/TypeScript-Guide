@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-17 09:55
-#+macro:version 0.0.37
+#+date:2019-11-17 16:23
+#+macro:version 0.0.38
 
 #+texinfo:@insertcopying
 
@@ -3477,7 +3477,8 @@ classes are not.
 Classes consist of a variety of different properties and members.
 These members can be either public or private, and static or instance.
 
-** Introduction to Classes
+** Simple Classes and Closures
+   #+cindex:classes
 Creating classes in Typescript is essentially the same as creating
 interfaces.  Here is a simple =Point= class that keeps track of an ~x~
 and ~y~ position.
@@ -3510,6 +3511,20 @@ Here is the JavaScript output for the =Point= class:
       return Point;
   })();
 #+end_src
+
+#+cindex:closures
+Public methods and and static members will be added to the =Point=
+function's prototype.  Classes, modules, and enums in TypeScript all
+compile into JavaScript closures.  Closures are a JavaScript construct
+that provide a way of creating a private state for a specific segment
+of code.  When a closure is created, it contains two things:
+
+- a function; and
+- the state of the environment when the function was created.
+
+
+The function is returned to the caller of the closure and the state is
+used when the function is called.
 
 ** A Simple Class-Based Example
 #+cindex:ECMAScript 2015
