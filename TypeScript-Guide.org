@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-17 16:23
-#+macro:version 0.0.38
+#+date:2019-11-17 17:18
+#+macro:version 0.0.39
 
 #+texinfo:@insertcopying
 
@@ -3477,13 +3477,13 @@ classes are not.
 Classes consist of a variety of different properties and members.
 These members can be either public or private, and static or instance.
 
-** Simple Classes and Closures
+** Creating Classes
    #+cindex:classes
-Creating classes in Typescript is essentially the same as creating
-interfaces.  Here is a simple =Point= class that keeps track of an ~x~
-and ~y~ position.
+   Creating classes in Typescript is essentially the same as creating
+   interfaces.  Here is a simple =Point= class that keeps track of an ~x~
+   and ~y~ position.
 
-#+begin_src js -n
+   #+begin_src js -n
   class Point {
       public x: number;
       public y: number;
@@ -3492,39 +3492,77 @@ and ~y~ position.
           this.y = y;
       }
   }
-#+end_src
+   #+end_src
 
-This example includes a default value for the property ~y~.
-TypeScript treats parameters with default values as optional
-parameters.  This provides a simple method for ensuring you are always
-operating on instantiated objects.
+   This example includes a default value for the property ~y~.
+   TypeScript treats parameters with default values as optional
+   parameters.  This provides a simple method for ensuring you are always
+   operating on instantiated objects.
 
-Here is the JavaScript output for the =Point= class:
+   Here is the JavaScript output for the =Point= class:
+
+   #+begin_src js -n
+     var Point = (function () {
+	 function Point(x, y) {
+	     if (typeof y == "undefined") { y = 0; }
+	     this.x = x;
+	     this.y = y;
+	 }
+	 return Point;
+     })();
+   #+end_src
+
+*** TypeScript Classes and JavaScript Closures
+   #+cindex:closures
+   Public methods and and static members will be added to the =Point=
+   function's prototype.  Classes, modules, and enums in TypeScript all
+   compile into JavaScript closures.  Closures are a JavaScript construct
+   that provide a way of creating a private state for a specific segment
+   of code.  When a closure is created, it contains two things:
+
+   - a function; and
+   - the state of the environment when the function was created.
+
+
+   The function is returned to the caller of the closure and the state is
+   used when the function is called.
+
+*** How Interfaces and Classes Interact
+Classes can optionally inherit type information from interfaces using
+the ~implements~ keyword.  The class will then be required to
+implement all of the interface members.  Note that decorating the
+constructor's parameters with ~public~ or ~private~ keywords tells
+TypeScript to treat those objects as part of the type and not just
+initialization parameters.
+
+Providing a comma-separated list of interfaces after the ~implements~
+keyword allows the class to provide implementations of a variety of
+different contracts.
 
 #+begin_src js -n
-  var Point = (function () {
-      function Point(x, y) {
-          if (typeof y == "undefined") { y = 0; }
-          this.x = x;
-          this.y = y;
+  interface IPoint {
+      x: number;
+      y: number;
+  }
+
+  interface ICompare {
+      Compare(p2: IPoint): number
+  }
+
+  class Point implements IPoint, ICompare {
+      constructor(public x: number, public y = 0) {
       }
-      return Point;
-  })();
+      public Compare(p2: IPoint):number {
+	      // <return 0, 1, or -1>
+      }
+  }
 #+end_src
 
-#+cindex:closures
-Public methods and and static members will be added to the =Point=
-function's prototype.  Classes, modules, and enums in TypeScript all
-compile into JavaScript closures.  Closures are a JavaScript construct
-that provide a way of creating a private state for a specific segment
-of code.  When a closure is created, it contains two things:
-
-- a function; and
-- the state of the environment when the function was created.
-
-
-The function is returned to the caller of the closure and the state is
-used when the function is called.
+Keeping the interfaces simple allows them to be more reusable across
+applications.  The ~Compare~ method could easily have been placed on
+the IPoint interface to achieve the same result.  However, any number
+of types could implement the ICompare interface, which have no need
+for the members ~x~ and ~y~.
 
 ** A Simple Class-Based Example
 #+cindex:ECMAScript 2015
@@ -3668,6 +3706,15 @@ Sammy the Python moved 5m.
 Galloping...
 Tommy the Palomino moved 34m.
 #+end_example
+
+** Instance Member Functions
+Instance member functions are only available to an instance of the
+object of the type and they have access to the ~this~ object that
+allows easy access to all of an object's members.  In JavaScript there
+are a couple of ways to create instance member functions: they can be
+added directly to the object using the ~this~ object during the
+object's creation, or they can be attached to the object's prototype.
+TypeScript has adopted the latter method.
 
 ** Public Private Protected Modifiers
 {{{heading(Public by Default)}}}
@@ -3951,11 +3998,39 @@ A couple of things to note about accessors:
 ** Static Properties
 #+cindex:static properties
 We can also create static members of a class, those that are visible
-on the class itself rather than on the instances.  In this example, we
-use =static= on the origin, as it’s a general value for all grids.
-Each instance accesses this value through prepending the name of the
-class.  Similarly to prepending ~this~ in front of instance accesses,
-here we prepend =Grid.= in front of static accesses.
+on the class itself rather than on the instances.  Static members are
+accessible at any time by referencing the named type.  To declare a
+static member, simply declare it with the ~static~ keyword.
+
+#+begin_src js -n
+  static Compare(p1: Point, p2: Point): number {
+      return p1.Compare(p2);
+  }
+#+end_src
+
+This ~Compare~ method is put directly on the =Point= object being
+created:
+
+#+begin_src js -n
+  var Point = (function () {
+      function Point(x, y) {
+	  ...
+      }
+      Point.prototype.Compare = function(p2) {
+	  ...
+      }
+      Point.Compare = function(p1, p2) {
+	  return p1.Compare(p2);
+      }
+      return Point;
+  })();
+#+end_src
+
+In this example, we use =static= on the origin, as it’s a general
+value for all grids.  Each instance accesses this value through
+prepending the name of the class.  Similarly to prepending ~this~ in
+front of instance accesses, here we prepend =Grid.= in front of static
+accesses.
 
 #+begin_src js
 class Grid {
