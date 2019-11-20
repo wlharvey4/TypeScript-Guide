@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-20 00:25
-#+macro:version 0.0.40
+#+date:2019-11-20 08:11
+#+macro:version 0.0.41
 
 #+texinfo:@insertcopying
 
@@ -4313,6 +4313,531 @@ interface Point3d extends Point {
 
 let point3d: Point3d = {x: 1, y: 2, z: 3};
 #+end_src
+* Enums
+** About Enums
+#+cindex:enum
+#+cindex:named constant
+#+cindex:enum declaration
+Enums are an entity intended for holding a specific value that is
+referenced using a name to keep code readable.  An enum value is
+simply a number or string associated with a named constant.  Here is
+an enum declaration:
+
+#+begin_src js -n
+  enum ShapeType {
+      Rectangle,
+      Circle,
+      Line,
+      Freehand
+  }
+#+end_src
+
+#+cindex:enum value, access
+#+cindex:enum, JavaScript code
+You access the enum values like you were accessing a class's static
+members:  ~ShapeType.Rectangle~.  The real magic behind enums in
+TypeScript is how they are generated in JavaScript:
+
+#+begin_src js -n
+  var ShapeType;
+  (function (ShapeType) {
+      ShapeType[ShapeType["Rectangle"] = 0] = "Rectangle";
+      ShapeType[ShapeType["Circle"] = 1] = "Circle";
+      ShapeType[ShapeType["Line"] = 2] = "Line";
+      ShapeType[ShapeType["Freehand"] = 3] = "Freehand";
+  })(ShapeType || (ShapeType = {}));
+#+end_src
+
+#+cindex:mapping, enum
+TypeScript is creating a two-way mapping between the named constant
+and the number it is mapped to.  This creates a number of ways in
+which you can access the values of an enum.  =ShapeType= has been
+created inside of an anonymous function that returns an object that
+has two been given two properties for each member of the enum.  Taking
+advantage of JavaScript's dynamic typing system, TypeScript adds a
+property with the string value of the member name and maps it to an
+integer value.  That integer value is simultaneously added as a
+property of the =ShapeType= object and is mapped to the string value
+of the named member.  Thus:
+
+: ShapeType[ShapeType.Rectangle]
+
+produces the string "Rectangle".
+
+** Constant Members and Computed Members
+
+{{{heading(Constant Members)}}}
+
+#+cindex:member, constant enum
+#+cindex:member, computer enum
+TypeScript provides two types of enum members that can be created:
+- constant members
+- computed members
+
+
+The above example were all constant members with auto-generated
+constant values, These numbers are sequential starting from zero
+unless a constant value is provided to a member.  Then, all of the
+subsequent members of the =enum= will be in sequence with the number
+given.
+
+{{{heading(Computed Members)}}}
+
+#+cindex:computed member, enum
+Computed members are still named constants but the integer value they
+are mapped to is provided by an expression.  This can be either an
+in-line or a function call to another segment of code.  The only
+stipulation on the expression that you provide is that it returns a
+number.  In the following example, the =ShapeType= enum generates some
+specific indexes as well as creating a computed member:
+
+#+begin_src js -n
+  function GetEnumValue(): number {
+      return Date.now();
+  }
+
+  enum ShapeType {
+      Rectangle = 3,
+      Circle,
+      Line,
+      Freehand,
+      Random = GenEnumValue();
+  }
+
+#+end_src
+
+Here is the generated JavaScript code:
+
+#+begin_src js -n
+  function GetEnumValue() {
+      return Date.now();
+  }
+
+  var Shapetype;
+  (function (ShapeType) {
+      ShapeType[ShapeType["Rectangle"] = 3] = "Rectangle";
+      ShapeType[ShapeType["Circle"] = 4] = "Circle";
+      ShapeType[ShapeType["Line"] = 5] = "Line";
+      ShapeType[ShapeType["Freehand"] = 6] = "Freehand";
+      ShapeType[ShapeType["Randam"] = GetEnumValue()] = "Random";
+  })(ShapeType || (ShapeType = {}));
+#+end_src
+
+The expression provided to the computed member is built directly into
+the enum declaration generated.  The expression will be evaluated at
+runtime but only when =ShapeType= is initialized.  Once the expression
+has been run, the result will remain a member of the =ShapeType=
+object.
+
+** Enums can be Merged
+Enum definitions can be merged.  If two enum declarations are placed
+in different segments of code with the same type name, they will
+contribute to the same object.  You can see this in the last line of
+the enum declaration in the resulting JavaScript.  If the object
+exists, then each new property is added to the existing object;
+otherwise a new object is created and the properties are applied.
+
+** Enum Details
+#+cindex:enum type
+Enums allow us to define a set of named constants.  Using enums can
+make it easier to document intent, or create a set of distinct cases.
+TypeScript provides both numeric and string-based enums.
+
+{{{heading(Numeric Enums)}}}
+
+#+cindex:@code{enum} keyword
+#+cindex:numeric enum
+We’ll first start off with numeric enums, which are probably more
+familiar if you’re coming from other languages.  An enum can be
+defined using the =enum= keyword.
+
+#+begin_src js
+enum Direction {
+    Up = 1,
+    Down,
+    Left,
+    Right,
+}
+#+end_src
+
+#+cindex:enum initializer
+Above, we have a numeric enum where =Up= is initialized with 1.  All
+of the following members are auto-incremented from that point on.  In
+other words, =Direction.Up= has the value 1, =Down= has 2, =Left= has
+3, and =Right= has 4.
+
+If we wanted, we could leave off the initializers entirely:
+
+#+begin_src js
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+#+end_src
+
+#+cindex:auto-incrementing initializer
+Here, =Up= would have the value 0, =Down= would have 1, etc.  This
+auto-incrementing behavior is useful for cases where we might not care
+about the member values themselves, but do care that each value is
+distinct from other values in the same enum.
+
+Using an enum is simple: just access any member as a property off of
+the enum itself, and declare types using the name of the enum:
+
+#+begin_src js
+enum Response {
+    No = 0,
+    Yes = 1,
+}
+
+function respond(recipient: string, message: Response): void {
+    // ...
+}
+
+respond("Princess Caroline", Response.Yes)
+#+end_src
+
+Numeric enums can be mixed in computed and constant members (see
+below).  The short story is, enums without initializers either need to
+be first, or have to come after numeric enums initialized with numeric
+constants or other constant enum members.  In other words, the
+following isn’t allowed:
+
+#+begin_src js
+enum E {
+    A = getSomeValue(),
+    B, // Error! Enum member must have initializer.
+}
+#+end_src
+
+{{{heading(String Enums)}}}
+
+#+cindex:string enum
+#+cindex:constant-initialized
+String enums are a similar concept, but have some subtle runtime
+differences as documented below.  In a string enum, each member has to
+be constant-initialized with a string literal, or with another string
+enum member.
+
+#+begin_src js
+enum Direction {
+    Up = "UP",
+    Down = "DOWN",
+    Left = "LEFT",
+    Right = "RIGHT",
+}
+#+end_src
+
+#+cindex:serialize, string enum
+While string enums don’t have auto-incrementing behavior, string enums
+have the benefit that they “serialize” well.  In other words, if you
+were debugging and had to read the runtime value of a numeric enum,
+the value is often opaque---it doesn’t convey any useful meaning on
+its own (though reverse mapping can often help), string enums allow
+you to give a meaningful and readable value when your code runs,
+independent of the name of the enum member itself.
+
+{{{heading(Heterogenous Enums)}}}
+
+Technically enums can be mixed with string and numeric members, but
+it’s not clear why you would ever want to do so:
+
+#+begin_src js
+enum BooleanLikeHeterogeneousEnum {
+    No = 0,
+    Yes = "YES",
+}
+#+end_src
+
+Unless you’re really trying to take advantage of JavaScript’s runtime
+behavior in a clever way, it’s advised that you don’t do this.
+
+{{{heading(Computed and Constant Members)}}}
+
+#+cindex:constant enum
+#+cindex:computed enum
+Each enum member has a value associated with it which can be either
+constant or computed.  An enum member is considered constant if:
+
+- It is the first member in the enum and it has no initializer, in
+  which case it’s assigned the value 0:
+
+  #+begin_src js
+  // E.X is constant:
+  enum E { X }
+  #+end_src
+
+- It does not have an initializer and the preceding enum member was a
+  numeric constant.  In this case the value of the current enum member
+  will be the value of the preceding enum member plus one.
+
+  #+begin_src js
+  // All enum members in 'E1' and 'E2' are constant.
+
+  enum E1 { X, Y, Z }
+
+  enum E2 {
+      A = 1, B, C
+  }
+  #+end_src
+
+- The enum member is initialized with a constant enum expression.  A
+  constant enum expression is a subset of TypeScript expressions that
+  can be fully evaluated at compile time.  An expression is a constant
+  enum expression if it is:
+
+  1. a literal enum expression (basically a string literal or a
+     numeric literal)
+
+  2. a reference to previously defined constant enum member (which can
+     originate from a different enum)
+
+  3. a parenthesized constant enum expression
+
+  4. one of the +, -, ~ unary operators applied to constant enum
+     expression
+
+  5. +, -, *, /, %, <<, >>, >>>, &, |, ^ binary operators with
+     constant enum expressions as operands
+
+  It is a compile time error for constant enum expressions to be
+  evaluated to =NaN= or =Infinity=.
+
+
+#+cindex:computed enum
+In all other cases enum member is considered computed.
+
+#+begin_src js
+enum FileAccess {
+    // constant members
+    None,
+    Read    = 1 << 1,
+    Write   = 1 << 2,
+    ReadWrite  = Read | Write,
+    // computed member
+    G = "123".length
+}
+#+end_src
+
+{{{heading(Using Enums and Enum Member Types)}}}
+
+#+cindex:literal enum
+There is a special subset of constant enum members that aren’t
+calculated: literal enum members.  A literal enum member is a constant
+enum member with no initialized value, or with values that are
+initialized to:
+
+- any string literal (e.g. "foo", "bar, "baz")
+
+- any numeric literal (e.g. 1, 100)
+
+- a unary minus applied to any numeric literal (e.g. -1, -100)
+
+
+When all members in an enum have literal enum values, some special
+semantics come to play.
+
+The first is that enum members also become types as well!  For
+example, we can say that certain members can only have the value of an
+enum member:
+
+#+begin_src js
+enum ShapeKind {
+    Circle,
+    Square,
+}
+
+interface Circle {
+    kind: ShapeKind.Circle;
+    radius: number;
+}
+
+interface Square {
+    kind: ShapeKind.Square;
+    sideLength: number;
+}
+
+let c: Circle = {
+    kind: ShapeKind.Square, // Error! Type 'ShapeKind.Square' is not assignable to type 'ShapeKind.Circle'.
+    radius: 100,
+}
+#+end_src
+
+#+cindex:union type
+The other change is that enum types themselves effectively become a
+union of each enum member.  While we haven’t discussed union types
+yet, all that you need to know is that with union enums, the type
+system is able to leverage the fact that it knows the exact set of
+values that exist in the enum itself.  Because of that, TypeScript can
+catch silly bugs where we might be comparing values incorrectly.  For
+example:
+
+#+begin_src js
+enum E {
+    Foo,
+    Bar,
+}
+
+function f(x: E) {
+    if (x !== E.Foo || x !== E.Bar) {
+        //             ~~~~~~~~~~~
+        // Error! This condition will always return 'true' since the types 'E.Foo' and 'E.Bar' have no overlap.
+    }
+}
+#+end_src
+
+In that example, we first checked whether ~x~ was not ~E.Foo~.  If
+that check succeeds, then our =||= will short-circuit, and the body of
+the ‘if’ will run.  However, if the check didn’t succeed, then ~x~ can
+only be ~E.Foo~, so it doesn’t make sense to see whether it’s equal to
+~E.Bar~.
+
+{{{heading(Enums at Runtime)}}}
+
+Enums are real objects that exist at runtime.  For example, the
+following enum
+
+#+begin_src js
+enum E {
+    X, Y, Z
+}
+#+end_src
+
+{{{noindent}}}an actually be passed around to functions.
+
+#+begin_src js
+function f(obj: { X: number }) {
+    return obj.X;
+}
+
+// Works, since 'E' has a property named 'X' which is a number.
+f(E);
+#+end_src
+
+{{{heading(Enums at Compile Time)}}}
+
+#+cindex:@code{keyof} keyword
+#+cindex:@code{keyof typeof}
+Even though Enums are real objects that exist at runtime, the ~keyof~
+keyword works differently than you might expect for typical objects.
+Instead, use ~keyof typeof~ to get a Type that represents all Enum
+keys as strings.
+
+#+begin_src js
+enum LogLevel {
+    ERROR, WARN, INFO, DEBUG
+}
+
+/**
+ * This is equivalent to:
+ * type LogLevelStrings = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+ */
+type LogLevelStrings = keyof typeof LogLevel;
+
+function printImportant(key: LogLevelStrings, message: string) {
+    const num = LogLevel[key];
+    if (num <= LogLevel.WARN) {
+       console.log('Log level key is: ', key);
+       console.log('Log level value is: ', num);
+       console.log('Log level message is: ', message);
+    }
+}
+printImportant('ERROR', 'This is a message');
+#+end_src
+
+{{{heading(Reverse Mappings)}}}
+
+#+cindex:reverse mapping
+In addition to creating an object with property names for members,
+numeric enums members also get a reverse mapping from enum values to
+enum names.  For example, in this example:
+
+#+begin_src js
+enum Enum {
+    A
+}
+let a = Enum.A;
+let nameOfA = Enum[a]; // "A"
+#+end_src
+
+TypeScript might compile this down to something like the the following
+JavaScript:
+
+#+begin_src js
+var Enum;
+(function (Enum) {
+    Enum[Enum["A"] = 0] = "A";
+})(Enum || (Enum = {}));
+var a = Enum.A;
+var nameOfA = Enum[a]; // "A"
+#+end_src
+
+In this generated code, an enum is compiled into an object that stores
+both forward (name -> value) and reverse (value -> name) mappings.
+References to other enum members are always emitted as property
+accesses and never inlined.
+
+Keep in mind that string enum members do not get a reverse mapping
+generated at all.
+
+{{{heading(Const Enums)}}}
+
+In most cases, enums are a perfectly valid solution.  However
+sometimes requirements are tighter.  To avoid paying the cost of extra
+generated code and additional indirection when accessing enum values,
+it’s possible to use =const= enums.  Const enums are defined using the
+=const= modifier on our enums:
+
+#+begin_src js
+const enum Enum {
+    A = 1,
+    B = A * 2
+}
+#+end_src
+
+Const enums can only use constant enum expressions and unlike regular
+enums they are completely removed during compilation.  Const enum
+members are inlined at use sites.  This is possible since =const=
+enums cannot have computed members.
+
+#+begin_src js
+const enum Directions {
+    Up,
+    Down,
+    Left,
+    Right
+}
+
+let directions = [Directions.Up, Directions.Down, Directions.Left, Directions.Right]
+#+end_src
+
+{{{noindent}}}in generated code will become:
+
+#+begin_src js
+var directions = [0 /* Up */, 1 /* Down */, 2 /* Left */, 3 /* Right */];
+#+end_src
+
+{{{heading(Ambient Enums)}}}
+
+#+cindex:ambient enum
+Ambient enums are used to describe the shape of already existing enum
+types.
+
+#+begin_src js
+declare enum Enum {
+    A = 1,
+    B,
+    C = 2
+}
+#+end_src
+
+One important difference between ambient and non-ambient enums is
+that, in regular enums, members that don’t have an initializer will be
+considered constant if its preceding enum member is considered
+constant. In contrast, an ambient (and non-const) enum member that
+does not have initializer is always considered computed.
 * Variables
 ** Var
 *** Var Scoping Rules
@@ -4768,407 +5293,6 @@ Second, the Typescript compiler doesn’t allow spreads of type
 parameters from generic functions.  That feature is expected in future
 versions of the language.
 * Generics
-* Enums
-#+cindex:enum type
-Enums allow us to define a set of named constants.  Using enums can
-make it easier to document intent, or create a set of distinct cases.
-TypeScript provides both numeric and string-based enums.
-
-{{{heading(Numeric Enums)}}}
-
-#+cindex:@code{enum} keyword
-#+cindex:numeric enum
-We’ll first start off with numeric enums, which are probably more
-familiar if you’re coming from other languages.  An enum can be
-defined using the =enum= keyword.
-
-#+begin_src js
-enum Direction {
-    Up = 1,
-    Down,
-    Left,
-    Right,
-}
-#+end_src
-
-#+cindex:enum initializer
-Above, we have a numeric enum where =Up= is initialized with 1.  All
-of the following members are auto-incremented from that point on.  In
-other words, =Direction.Up= has the value 1, =Down= has 2, =Left= has
-3, and =Right= has 4.
-
-If we wanted, we could leave off the initializers entirely:
-
-#+begin_src js
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-#+end_src
-
-#+cindex:auto-incrementing initializer
-Here, =Up= would have the value 0, =Down= would have 1, etc.  This
-auto-incrementing behavior is useful for cases where we might not care
-about the member values themselves, but do care that each value is
-distinct from other values in the same enum.
-
-Using an enum is simple: just access any member as a property off of
-the enum itself, and declare types using the name of the enum:
-
-#+begin_src js
-enum Response {
-    No = 0,
-    Yes = 1,
-}
-
-function respond(recipient: string, message: Response): void {
-    // ...
-}
-
-respond("Princess Caroline", Response.Yes)
-#+end_src
-
-Numeric enums can be mixed in computed and constant members (see
-below).  The short story is, enums without initializers either need to
-be first, or have to come after numeric enums initialized with numeric
-constants or other constant enum members.  In other words, the
-following isn’t allowed:
-
-#+begin_src js
-enum E {
-    A = getSomeValue(),
-    B, // Error! Enum member must have initializer.
-}
-#+end_src
-
-{{{heading(String Enums)}}}
-
-#+cindex:string enum
-#+cindex:constant-initialized
-String enums are a similar concept, but have some subtle runtime
-differences as documented below.  In a string enum, each member has to
-be constant-initialized with a string literal, or with another string
-enum member.
-
-#+begin_src js
-enum Direction {
-    Up = "UP",
-    Down = "DOWN",
-    Left = "LEFT",
-    Right = "RIGHT",
-}
-#+end_src
-
-#+cindex:serialize, string enum
-While string enums don’t have auto-incrementing behavior, string enums
-have the benefit that they “serialize” well.  In other words, if you
-were debugging and had to read the runtime value of a numeric enum,
-the value is often opaque---it doesn’t convey any useful meaning on
-its own (though reverse mapping can often help), string enums allow
-you to give a meaningful and readable value when your code runs,
-independent of the name of the enum member itself.
-
-{{{heading(Heterogenous Enums)}}}
-
-Technically enums can be mixed with string and numeric members, but
-it’s not clear why you would ever want to do so:
-
-#+begin_src js
-enum BooleanLikeHeterogeneousEnum {
-    No = 0,
-    Yes = "YES",
-}
-#+end_src
-
-Unless you’re really trying to take advantage of JavaScript’s runtime
-behavior in a clever way, it’s advised that you don’t do this.
-
-{{{heading(Computed and Constant Members)}}}
-
-#+cindex:constant enum
-#+cindex:computed enum
-Each enum member has a value associated with it which can be either
-constant or computed.  An enum member is considered constant if:
-
-- It is the first member in the enum and it has no initializer, in
-  which case it’s assigned the value 0:
-
-  #+begin_src js
-  // E.X is constant:
-  enum E { X }
-  #+end_src
-
-- It does not have an initializer and the preceding enum member was a
-  numeric constant.  In this case the value of the current enum member
-  will be the value of the preceding enum member plus one.
-
-  #+begin_src js
-  // All enum members in 'E1' and 'E2' are constant.
-
-  enum E1 { X, Y, Z }
-
-  enum E2 {
-      A = 1, B, C
-  }
-  #+end_src
-
-- The enum member is initialized with a constant enum expression.  A
-  constant enum expression is a subset of TypeScript expressions that
-  can be fully evaluated at compile time.  An expression is a constant
-  enum expression if it is:
-
-  1. a literal enum expression (basically a string literal or a
-     numeric literal)
-
-  2. a reference to previously defined constant enum member (which can
-     originate from a different enum)
-
-  3. a parenthesized constant enum expression
-
-  4. one of the +, -, ~ unary operators applied to constant enum
-     expression
-
-  5. +, -, *, /, %, <<, >>, >>>, &, |, ^ binary operators with
-     constant enum expressions as operands
-
-  It is a compile time error for constant enum expressions to be
-  evaluated to =NaN= or =Infinity=.
-
-
-#+cindex:computed enum
-In all other cases enum member is considered computed.
-
-#+begin_src js
-enum FileAccess {
-    // constant members
-    None,
-    Read    = 1 << 1,
-    Write   = 1 << 2,
-    ReadWrite  = Read | Write,
-    // computed member
-    G = "123".length
-}
-#+end_src
-
-{{{heading(Using Enums and Enum Member Types)}}}
-
-#+cindex:literal enum
-There is a special subset of constant enum members that aren’t
-calculated: literal enum members.  A literal enum member is a constant
-enum member with no initialized value, or with values that are
-initialized to:
-
-- any string literal (e.g. "foo", "bar, "baz")
-
-- any numeric literal (e.g. 1, 100)
-
-- a unary minus applied to any numeric literal (e.g. -1, -100)
-
-
-When all members in an enum have literal enum values, some special
-semantics come to play.
-
-The first is that enum members also become types as well!  For
-example, we can say that certain members can only have the value of an
-enum member:
-
-#+begin_src js
-enum ShapeKind {
-    Circle,
-    Square,
-}
-
-interface Circle {
-    kind: ShapeKind.Circle;
-    radius: number;
-}
-
-interface Square {
-    kind: ShapeKind.Square;
-    sideLength: number;
-}
-
-let c: Circle = {
-    kind: ShapeKind.Square, // Error! Type 'ShapeKind.Square' is not assignable to type 'ShapeKind.Circle'.
-    radius: 100,
-}
-#+end_src
-
-#+cindex:union type
-The other change is that enum types themselves effectively become a
-union of each enum member.  While we haven’t discussed union types
-yet, all that you need to know is that with union enums, the type
-system is able to leverage the fact that it knows the exact set of
-values that exist in the enum itself.  Because of that, TypeScript can
-catch silly bugs where we might be comparing values incorrectly.  For
-example:
-
-#+begin_src js
-enum E {
-    Foo,
-    Bar,
-}
-
-function f(x: E) {
-    if (x !== E.Foo || x !== E.Bar) {
-        //             ~~~~~~~~~~~
-        // Error! This condition will always return 'true' since the types 'E.Foo' and 'E.Bar' have no overlap.
-    }
-}
-#+end_src
-
-In that example, we first checked whether ~x~ was not ~E.Foo~.  If
-that check succeeds, then our =||= will short-circuit, and the body of
-the ‘if’ will run.  However, if the check didn’t succeed, then ~x~ can
-only be ~E.Foo~, so it doesn’t make sense to see whether it’s equal to
-~E.Bar~.
-
-{{{heading(Enums at Runtime)}}}
-
-Enums are real objects that exist at runtime.  For example, the
-following enum
-
-#+begin_src js
-enum E {
-    X, Y, Z
-}
-#+end_src
-
-{{{noindent}}}an actually be passed around to functions.
-
-#+begin_src js
-function f(obj: { X: number }) {
-    return obj.X;
-}
-
-// Works, since 'E' has a property named 'X' which is a number.
-f(E);
-#+end_src
-
-{{{heading(Enums at Compile Time)}}}
-
-#+cindex:@code{keyof} keyword
-#+cindex:@code{keyof typeof}
-Even though Enums are real objects that exist at runtime, the ~keyof~
-keyword works differently than you might expect for typical objects.
-Instead, use ~keyof typeof~ to get a Type that represents all Enum
-keys as strings.
-
-#+begin_src js
-enum LogLevel {
-    ERROR, WARN, INFO, DEBUG
-}
-
-/**
- * This is equivalent to:
- * type LogLevelStrings = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
- */
-type LogLevelStrings = keyof typeof LogLevel;
-
-function printImportant(key: LogLevelStrings, message: string) {
-    const num = LogLevel[key];
-    if (num <= LogLevel.WARN) {
-       console.log('Log level key is: ', key);
-       console.log('Log level value is: ', num);
-       console.log('Log level message is: ', message);
-    }
-}
-printImportant('ERROR', 'This is a message');
-#+end_src
-
-{{{heading(Reverse Mappings)}}}
-
-#+cindex:reverse mapping
-In addition to creating an object with property names for members,
-numeric enums members also get a reverse mapping from enum values to
-enum names.  For example, in this example:
-
-#+begin_src js
-enum Enum {
-    A
-}
-let a = Enum.A;
-let nameOfA = Enum[a]; // "A"
-#+end_src
-
-TypeScript might compile this down to something like the the following
-JavaScript:
-
-#+begin_src js
-var Enum;
-(function (Enum) {
-    Enum[Enum["A"] = 0] = "A";
-})(Enum || (Enum = {}));
-var a = Enum.A;
-var nameOfA = Enum[a]; // "A"
-#+end_src
-
-In this generated code, an enum is compiled into an object that stores
-both forward (name -> value) and reverse (value -> name) mappings.
-References to other enum members are always emitted as property
-accesses and never inlined.
-
-Keep in mind that string enum members do not get a reverse mapping
-generated at all.
-
-{{{heading(Const Enums)}}}
-
-In most cases, enums are a perfectly valid solution.  However
-sometimes requirements are tighter.  To avoid paying the cost of extra
-generated code and additional indirection when accessing enum values,
-it’s possible to use =const= enums.  Const enums are defined using the
-=const= modifier on our enums:
-
-#+begin_src js
-const enum Enum {
-    A = 1,
-    B = A * 2
-}
-#+end_src
-
-Const enums can only use constant enum expressions and unlike regular
-enums they are completely removed during compilation.  Const enum
-members are inlined at use sites.  This is possible since =const=
-enums cannot have computed members.
-
-#+begin_src js
-const enum Directions {
-    Up,
-    Down,
-    Left,
-    Right
-}
-
-let directions = [Directions.Up, Directions.Down, Directions.Left, Directions.Right]
-#+end_src
-
-{{{noindent}}}in generated code will become:
-
-#+begin_src js
-var directions = [0 /* Up */, 1 /* Down */, 2 /* Left */, 3 /* Right */];
-#+end_src
-
-{{{heading(Ambient Enums)}}}
-
-#+cindex:ambient enum
-Ambient enums are used to describe the shape of already existing enum
-types.
-
-#+begin_src js
-declare enum Enum {
-    A = 1,
-    B,
-    C = 2
-}
-#+end_src
-
-One important difference between ambient and non-ambient enums is
-that, in regular enums, members that don’t have an initializer will be
-considered constant if its preceding enum member is considered
-constant. In contrast, an ambient (and non-const) enum member that
-does not have initializer is always considered computed.
 * Type Inference
 #+cindex:type inference
 In this section, we will cover type inference in TypeScript.  Namely,
