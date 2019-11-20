@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-17 17:18
-#+macro:version 0.0.39
+#+date:2019-11-20 00:25
+#+macro:version 0.0.40
 
 #+texinfo:@insertcopying
 
@@ -3716,6 +3716,45 @@ added directly to the object using the ~this~ object during the
 object's creation, or they can be attached to the object's prototype.
 TypeScript has adopted the latter method.
 
+In the following code, an interface is created which includes an
+instance member function, or method, and a class is implemented based
+upon this interface.  The class does not include a constructor, but it
+does include default values for the instance members.  Below the class
+definition is a representation of the transpiled JavaScript code.
+This code is given a constructor that initializes the instance members
+using the default parameter values, and places the method on the
+constructor's prototype.
+
+#+begin_src js -n
+  interface IBounds {
+      Location: IPoint;
+      Height: number;
+      Width: number;
+      Size(): number;
+  }
+
+  class Bounds implements IBound {
+      public Location: IPoint = new Point(0, 0);
+      public Height: number = 0;
+      public Width: number = 0;
+      public Size() {
+          return this.Height * this.Width;
+      }
+  }
+
+  var Bounds = (function () {
+      function Bounds() {
+          this.Location = new Point(0, 0);
+          this.Height = 0;
+          this.Width = 0;
+      }
+      Bounds.prototype.Size = function () {
+          return this.Height * this.Width;
+      }
+      return Bounds;
+      })();
+#+end_src
+
 ** Public Private Protected Modifiers
 {{{heading(Public by Default)}}}
 
@@ -3915,7 +3954,51 @@ with an accessibility modifier or =readonly=, or both.  Using
 =private= member; likewise, the same is done for =public=,
 =protected=, and =readonly=.
 
-** Accessors
+** Property Accessors
+#+cindex:Properties
+#+cindex:ECMAScript 5
+#+cindex:getter
+#+cindex:setter
+#+cindex:@code{get} keyword
+#+cindex:@code{set} keyword
+The concept of =Properties= was introduced in ECMAScript 5.  This
+allows a developer to create getter and setter methods for a
+designated instance method that can be accessed like properties.  The
+TypeScript compiler must be set to emit ECMAScript 5 code, and then
+you will be able to use the =get= and =set= keywords to define
+properties.  Since getters and setters are method calls, they allow
+the programmer to verify constraints placed on instance members.
+
+#+begin_src js -n
+  interface IBounds {
+      Location: IPoint;
+      Height: number;
+      Width: number;
+      Size(): number;
+  }
+
+  class Bounds implements IBounds {
+      public Location: IPoint = new Point(0, 0);
+      private _height: number = 0;
+      private _width: number = 0;
+      public Size() {
+          return this.Height * this.Width;
+      }
+      get Height(): number {
+          return this._height;
+      }
+      set Height(value: number) {
+          this._height = (value > 0) ? value : 0;
+      }
+      get Width(): number {
+          return this._width;
+      }
+      set Width(value: number) {
+          this._width = (value > 0) ? value : 0;
+      }
+  }
+#+end_src
+
 #+cindex:accessor
 TypeScript supports =getters/setters= as a way of intercepting
 accesses to a member of an object.  This gives you a way of having
