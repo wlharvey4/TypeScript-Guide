@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-20 08:11
-#+macro:version 0.0.41
+#+date:2019-11-20 23:27
+#+macro:version 0.0.42
 
 #+texinfo:@insertcopying
 
@@ -5640,6 +5640,11 @@ function move(pet: Fish | Bird) {
 }
 #+end_src
 * Modules
+#+cindex:ECMAScript 2015
+#+cindex:internal module, namespace
+#+cindex:namespace, internal module
+#+cindex:external module, module
+#+cindex:module, external module
 In order to align with ECMAScript 2015’s terminology, (namely that
 ~module X {~ is equivalent to the now-preferred ~namespace X {~), in
 TypeScript 1.5, the nomenclature has changed:
@@ -5648,6 +5653,168 @@ TypeScript 1.5, the nomenclature has changed:
 - “External modules” are now simply “modules”
 
 
+* Introduction to Modules
+
+** Internal Module Namespaces
+#+cindex:namespace, internal module
+#+cindex:internal module, namespace
+#+cindex:closure, namespace
+#+cindex:global variable
+Internal modules represent a “namespace” that classes, interfaces,
+enums, variables, code segments, and other namespaces can exist inside
+of.  They are created inside of a closure just like classes are.
+However, modules don’t return a function that gets assigned to a
+global variable.  Rather, modules execute a closure /with/ a global
+variable as a parameter.  Exported properties are then attached /to/
+this global variable.  A module can contain any number of declarations
+of any type of object including other modules.  Each of the
+declarations inside of a module can be either kept isolated or they
+can be exported.  Exported objects will be added to the module’s
+instance.
+
+#+cindex:internal module definition
+#+cindex:namespace definition
+The following is an internal module (“namespace”) definition:
+
+#+begin_src js -n
+  module Shapes {
+      var origin: IPoint = new Point(0, 0);
+      export enum ShapeType {
+          Rectangle = 3,
+          Circle,
+          Line,
+          Freehand
+      }
+      export interface IShape {
+          Type: ShapeType;
+          Bounds: IBounds;
+      }
+      export class Shape implements IShape {
+          public Type: ShapeType = ShapeType.Rectangle;
+          public Bounds: IBounds;
+          constructor() {
+              this.Bounds = new Bounds();
+              this.Bounds.Location = origin;
+          }
+      }
+  }
+#+end_src
+
+The =origin= variable is a private instance of the =Point= class
+created earlier.  Any expression inside the =Shapes= module has access
+to the =origin= variable but since it is not decorated with the
+~export~ keyword, it is limited to within the module.
+
+There is a public interface for an object type that will represent a
+shape of some sort.  There is also also a new public class that
+implements the shape interface and is ready to be drawn on a surface.
+This =Shape= class needs to be accessible outside the =Spaces=
+namespace so it must be exported.
+
+The =ShapeType= enum belongs within the =Shapes= namespace so its
+declaration is included within the module definition as well.
+
+#+cindex:namespace
+#+cindex:internal module
+There is now an internal module (“namespace”) that has two accessible
+named types, the =ShapeType= enum and =Shape= class, and one
+inaccessible variable, the =origin= variable, which is part of the
+isolated state of the module.  While one will not necessarily need
+access to the =ShapeType= enum, it still must be exported for the code
+to compile.
+
+Any named types that are used in the definition of another member
+*must* be made /as accessible as/ that member.  If this requirement is
+not met, compilation will fail.
+
+{{{heading(Accessing Module Members)}}}
+
+Accessing these types is done by providing the module name and then
+the type to access. 
+
+: var shape = new Shapes.Shape();
+: shape.Type = Shapes.ShapeType.Circle;
+
+This code creates a new =Shape= object and sets it type.
+
+{{{heading(Generated JavaScript Module Code)}}}
+
+#+cindex:JavaScript module code
+#+cindex:closure, module
+The generated JavaScript code for the module looks similar to the code
+generated for enum types.  All of the members of the module are
+wrapped in a closure that runs when the module is loaded.  Each of the
+exported types is placed on the instance variable that is passed to
+the closure that is available to anyone accessing the module.  
+
+Modules also share the ability to be merged that enums do.  This means
+that you can separate your code into multiple files and have them
+merged into one object during runtime.  The downside to this
+implementation of modules is that it takes away the ability to create
+interfaces for modules.  However, the ability to organize your code in
+whichever manner you choose is far more valuable than any
+functionality interfaces would bring to modules.
+
+Here is the resuling JavaScript code for the above module definition:
+
+#+begin_src js -n
+  var Shapes;
+  (function (Shapes){
+      var origin = new Point(0, 0);
+      (function (ShapeType) {
+          ShapeType[ShapeType["Rectangle"] = 3] = "Rectangle";
+          ShapeType[ShapeType["Circle"] = 3] = "Circle";
+          ShapeType[ShapeType["Line"] = 3] = "Line";
+          ShapeType[ShapeType["Freehand"] = 3] = "Freehand";
+      })(Shapes.ShapeType || (Shapes.ShapeType = {}));
+      var ShapeType = Shapes.ShapeType;
+      var Shape = (function() {
+          function Shape() {
+              this.Type = 3 /* Rectangle */;
+              this.Bounds = new Bounds();
+              this.Bounds.Location = origin;
+          }
+          return Shape;
+      })();
+  })(Shapes || (Shapes = {}));
+#+end_src
+
+** Creating Module Namespaces
+There are two ways to provide module namespaces in TypeScript.  One
+way is to nest the modules inside of each other.  The other way is to
+define them as part of the module declaration.
+
+#+begin_src js -n
+  module Animals {
+      /* nesting modules inside of each other */
+      export module Reptiles {
+          export var snake = "snake";
+      }
+  }
+
+  module.Animals.Mammels {
+      /* defining modules as part of the module declaration */
+      export var monkey = "monkey";
+  }
+#+end_src
+
+Both of the module declarations shown above are valid and the
+JavaScript output from both declarations is exactly the same.  Which
+style you choose is a matter of preference.  The compiler will treat
+them as equivalent.  Further, the means of accessing the namespaces is
+identical.
+
+** Module Imports
+TypeScript provides a keyword opposite to the ~export~ keyword that
+allows you to create an alias to members of another module.  The
+~import~ keyword creates a new local reference to exported types from
+other modules.
+
+: import Bounds = Drawing.Bounds
+
+The alias can be used as both a type annotation and as its object type.
+
+* Module Details
 #+cindex:ECMAScript 2015
 Starting with ECMAScript 2015, JavaScript has a concept of
 modules.  TypeScript shares this concept.
