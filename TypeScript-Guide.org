@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-08-20 23:26
-#+macro:version 0.0.31
+#+date:2019-11-21 19:08
+#+macro:version 0.0.43
 
 #+texinfo:@insertcopying
 
@@ -11,13 +11,24 @@ JavaScript output.
 
 - https://www.typescriptlang.org
 
+
+TypeScript involves the following concepts:
+
+- Types
+- Functions
+- Interfaces
+- Classes
+- Enums
+- Modules
+- Generic Types
+
 ** Source Code Repository
 #+cindex:source
 TypeScript is being developed on GitHub and is open source.
 
 - https://github.com/Microsoft/TypeScript
 
-** Installation
+** Gulp Installation
 #+cindex:installation
 #+cindex:updating
 
@@ -221,7 +232,7 @@ The full folder structure of a sample app is explained below:
 - src/server.ts :: Entry point to your express app
 - test :: Contains your tests. Separate from source because there is a
           different build process.
-- views :: iews define how your app renders on the client.
+- views :: views define how your app renders on the client.
 - .env :: API keys, tokens, passwords, database URI. Clone this, but
           don't check it in to public repos.
 - .travis.yml :: Used to configure Travis CI build
@@ -985,8 +996,9 @@ browserify()
 
 See:
 - [[https://github.com/frankwallis/duo-typescript][due-typescript]]
-*** Grunt
-TypeScript Compilation Task for GruntJS
+*** GruntJS
+**** grunt-ts
+~grunt-ts~ : TypeScript Compilation Task for GruntJS
 
 {{{heading(Install grunt-ts)}}}
 
@@ -1010,29 +1022,238 @@ module.exports = function(grunt) {
     grunt.registerTask("default", ["ts"]);
 };
 #+end_src
+
+**** GruntJS for TypeScript
+- from /TypeScript 3.0 Quick Start Quide/, by Patrick Desjardins
+  (\copy 2018)
+
+
+Install the Grunt CLI tool globally:
+: yarn add global grunt-cli
+
+{{{heading(Install Development Dependencies)}}}
+
+Install TypeScript (~typescript~), Grunt (~grunt~) and ~grunt-ts~, a Grunt TypeScript plugin, in
+your project as development dependencies:
+
+#+caption:Install TypeScript, GruntJS, and Grunt-TS as Dev Dependencies
+#+name:install-typescript-grunt-grunt-ts-as-dev-deps
+#+begin_src sh :dir examples/test-grunt :results output :exports results
+yarn init -yp
+yarn add --dev typescript grunt grunt-ts
+#+end_src
+
+{{{heading(Install a Gruntfile.js)}}}
+
+Now configure Grunt to use a TypeScript plugin.  Create a
+~Gruntfile.js~ in the project's root directory.  Limit the TypeScript
+options placed into the ~Gruntfile.js~ and instead leverage the
+TypeScript configuration file.
+
+A minimilist Grunt configuration with the sole purpose of compiling
+TypeScript into JavaScript would look like this:
+
+#+caption:Minimilist Grunt Configuration
+#+name:minimal-grunt-config
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/Gruntfile.js
+  module.exports = function(grunt) {
+   grunt.initConfig({
+     ts: {
+      default : {
+       tsconfig: './tsconfig.json'
+      }
+     }
+   });
+   grunt.loadNpmTasks("grunt-ts");
+   grunt.registerTask("default", ["ts"]);
+  };
+#+end_src
+
+The Grunt configuration creates a default task that executes a custom
+=ts= task that links to the ~tsconfig.json~ file, which is the default
+TypeScript configuration file.
+
+{{{heading(Install a tsconfig.json File)}}}
+
+A minimilist ~tsconfig.json~ file can look like:
+
+#+caption:Minimilist TS Config File
+#+name:minimilist-tsconfig
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/tsconfig.json
+  {
+   "compilerOptions": {
+     "rootDir": "src",
+     "outDir": "build"
+   }
+  }
+#+end_src
+
+This takes every TypeScript file with the extension ~.ts~ and compiles
+them, placing them in the ~build~ folder.
+
+{{{heading(Test Grunt Compilation)}}}
+
+To test the configuration, create a simple ~index.ts~ file in a ~src/~
+folder at the root of the project.  You can type
+~console.log('test')~.  After, run ~grunt~ in a command line at the
+root of your project as well.  This will create a build folder with an
+~index.js~ file containing the same line of code.  It will also create
+the ~js.map~ file that will let you debug in your browser directly in
+TypeScript's code.
+
+#+caption:Test File for Grunt Configuration
+#+name:test-file-for-grunt-configuration
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-grunt/src/test-grunt.ts
+console.log('testing Grunt configuration');
+#+end_src
+
+#+caption:Test Grunt Configuration
+#+name:test-grunt-configuration
+#+header: :dir examples/test-grunt
+#+begin_src sh :results output :exports both
+grunt
+tree -I node_modules
+#+end_src
+
 *** Gulp
+- [[https://www.npmjs.com/package/gulp][gulp]] :: Gulp is a toolkit that helps you automate painful or
+     time-consuming tasks in your development workflow.
+
+- [[https://www.npmjs.com/package/gulp-cli][gulp-cli]] :: Command Line Utility for Gulp
+  : $ gulp [flags] <task> <task>...
+
 - [[https://github.com/ivogabe/gulp-typescript][gulp-typescript]] :: A gulp plugin for handling TypeScript compilation
-     workflow.
+     workflow.  The plugin exposes TypeScript's compiler options to
+     gulp using TypeScript API.
 
-{{{heading(Install gulp-typescript)}}}
+{{{heading(Install typescript, gulp, and gulp-typescript)}}}
 
-: npm install gulp-typescript
+#+caption:Gulp and Tooling Installation
+#+name:gulp-tooling-installation
+#+begin_src sh :results silent :exports both :dir examples/test-gulp
+yarn init -yp
+yarn add --dev typescript gulp gulp-typescript
+#+end_src
 
 {{{heading(Basic gulpfile.js)}}}
 
-#+begin_src js
+Create a ~Gulpfile.js~ in the root of the project.
+
+#+caption:A Test Gulpfile
+#+name:test-gulpfile.js
+#+header: :mkdirp yes
+#+begin_src js :tangle examples/test-gulp/Gulpfile.js
 var gulp = require("gulp");
 var ts = require("gulp-typescript");
 
-gulp.task("default", function () {
+exports.default = function () {
     var tsResult = gulp.src("src/*.ts")
         .pipe(ts({
               noImplicitAny: true,
               out: "output.js"
         }));
-    return tsResult.js.pipe(gulp.dest("built/local"));
-});
+    return tsResult.js.pipe(gulp.dest("build/local"));
+};
 #+end_src
+
+#+caption:Basic File to Test Gulp
+#+name:basic-file-to-test-gulp
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-gulp/src/basic.ts
+console.log('Testing gulp');
+#+end_src
+
+#+caption:Test Gulp
+#+name:test-gulp
+#+begin_src sh :results output :exports both :dir examples/test-gulp
+gulp
+#+end_src
+
+#+begin_src sh :results output :exports results
+tree -I node_modules
+#+end_src
+
+**** TypeScript Node and Gulp---ts-node
+- [[https://www.npmjs.com/package/ts-node][ts-node]] :: TypeScript execution and REPL for node.js, with source
+     map support.
+
+
+By installing the ~ts-node~ module, you can compile TypeScript into
+JavaScript with Gulp.  Install ~ts-node~, ~@types/node~[fn:1], and
+~typescript~ locally.
+
+#+caption:TypeScript Node and Gulp Installation
+#+name:typescript-node-gulp-installation
+#+header: :dir examples/test-tsnode
+#+begin_src sh :results output :exports both
+yarn init -yp
+yarn add --dev gulp ts-node typescript @types/node
+#+end_src
+
+Create a simple Gulpfile.  This Gulpfile simply pipes TypeScript files
+through ~gulp~ into the ~build~ directory.
+
+#+caption:TypeScript Node Gulpfile
+#+name:typescript-node-gulpfile
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-tsnode/Gulpfile.ts
+var gulp = require("gulp");
+
+exports.default = function () {
+  return gulp.src("src/*.ts").pipe(gulp.dest("build/local"));
+};
+#+end_src
+
+This is the TypeScript file that needs to be transpiled.
+
+#+caption:Basic TypeScript Node File
+#+name:basic-typescript-node-file
+#+header: :mkdirp yes
+#+begin_src js -n :tangle examples/test-tsnode/src/basic.ts
+console.log('Hello TypeScript Node');
+#+end_src
+
+Run Gulp with ~gulp~.
+
+#+caption:Run Gulp Under TypeScript Node
+#+name:run-gulp-under-typescript-node
+#+header: :dir examples/test-tsnode
+#+begin_src sh :results output :exports both
+gulp
+#+end_src
+
+**** Using Gulp to Compile TypeScript
+- from /TypeScript 3.0 Quick Start Quide/, by Patrick Desjardins
+  (\copy 2018)
+
+
+~gulp.js~ is a build tool in JavaScript built on node streams.  These
+streams facilitate the connection of file operations through
+pipelines.  ~gulp~ reads the file system and pipes the data at hand
+from one single-purposed plugin to another through the ~.pipe()~
+operator, doing one task at a time.  ~gulp~ requires knowledge of
+JavaScript and coding to define its tasks.  ~gulp~ is a build system
+which means apart from running tasks, it is also capable of copying
+files from one location to another, compiling, deploying, creating
+notifications, unit testing, linting, etc.
+
+Grunt runs tasks by transforming files and saves as new ones in
+temporary folders and the output of one task is taken as input for
+another and so on until the output reaches the destination
+folder. This involves a lot of I/O calls and creation of many
+temporary files.
+
+Whereas ~gulp~ streams through the file system and does not require
+any of these temporary locations decreasing the number of I/O calls
+thus, improving performance.
+
+Grunt uses configuration files to perform tasks whereas ~gulp~
+requires its build file to be coded.  In Grunt, each plugin needs to
+be configured to match its input location to the previous plugin’s
+output. In ~gulp~, the plugins are automatically pipe-lined
 *** Jspm
 - [[https://github.com/Microsoft/TypeScriptSamples/tree/master/jspm][jspm]]
 *** Webpack
@@ -1065,7 +1286,7 @@ module.exports = {
 ** An Example
 In your editor, type the following JavaScript code in ~greeter.ts~:
 
-#+name:greater0.ts
+#+name:greeter0.ts
 #+header: :mkdirp yes
 #+begin_src js :tangle examples/greeter0.ts
 function greeter(person) {
@@ -1099,6 +1320,7 @@ offers.  Add a =: string= type annotation to the ‘person’ function
 argument as shown here:
 
 #+name:greeter1.ts
+#+header: :mkdirp yes
 #+begin_src js :tangle examples/greeter1.ts
 function greeter(person: string) {
     return "Hello, " + person;
@@ -1109,7 +1331,7 @@ let user = "Jane User";
 document.body.textContent = greeter(user);
 #+end_src
 
-#+name:compile-greet2.ts
+#+name:compile-greeter1.ts
 #+begin_src sh :results output :exports both :dir examples
 tsc greeter1.ts
 #+end_src
@@ -1250,9 +1472,84 @@ web application!
 #+begin_src sh :results output :exports both :dir examples
 open greeter.html
 #+end_src
-* Types
+* Type System
 #+cindex:types
-** Boolean
+#+cindex:type system
+#+cindex:static type system
+#+cindex:type annotations
+#+cindex:constraints
+#+cindex:inference
+#+cindex:type inference
+#+cindex:@code{Any} type
+TypeScript adds a static type system on top of JavaScript.  Type
+annotations place a specific set of constraints on top of variables
+being created.  These constraints allow the compiler and development
+tools to better assist in the proper use of the object.  This includes
+a list of functions, variables, and. properties available on the
+object.  If a variable is created but no type is provided for it,
+TypeScript will attempt to infer the type from the context in which it
+is used.  When an object's type is not given and cannot be inferred
+from its initialization, then it will be treated as an =Any= type.  It
+can represent any JavaScript value and the minimum amount of type
+checking is performed on objects of type =Any=.
+
+{{{heading(Categories)}}}
+
+#+cindex:types, list of
+#+cindex:primitive types
+#+cindex:object types
+#+cindex:type parameters
+#+cindex:Boolean type
+#+cindex:Number type
+#+cindex:String type
+#+cindex:Undefined
+#+cindex:Void
+#+cindex:Null
+Every other type (than =Any=) that exists in TypeScript falls into one
+of three categories:
+
+- Primitives
+  - Boolean
+  - Number
+  - String
+  - Null
+  - Undefined
+  - Void
+- Objects
+- Type Parameters (Generics)
+
+
+{{{heading(Type Parameters)}}}
+
+Type parameters are used when referencing generic types or calling
+generic functions.  They are used to keep code generic enough to be
+used on a multitude of objects while limiting those objects to a
+specific set of constraints.  An example of generics is arrays.
+Arrays exist just as in JavaScript; they have an extra set of
+constraints placed on them.  The =array= object itself has certain
+type constraints and methods that are created as being an object of
+the =Array= type.  The second piece of information that comes from the
+array declaration is the type of the objects contained in the array.
+There are two ways to explicitly type an array; otherwise the
+contextual typing system will attempt to infer the type information.
+
+: var array1: string[] = [];
+: var array2: Array<string> = [];
+
+Both of these ways produce the same type information and the same
+JavaScript output.  The first is a shorthand using the type literal
+=[]=.
+
+#+cindex:types
+** Primitive Types
+#+cindex:primitive types
+#+cindex:@code{Void} type
+All primitive types correspond directly to JavaScript's primitive
+types except =Void=.  The =Void= type is meant to represent the
+absence of a value.  A function that returns no value has a return
+type of ~void~.
+
+*** Boolean ~boolean~
 #+cindex:boolean type
 - =true=
 - =false=
@@ -1260,7 +1557,7 @@ open greeter.html
 
 : let isDone: boolean = false;
 
-** Number
+*** Number ~number~
 #+cindex:number type
 All numbers are floating-point values; numbers include binary, octal,
 hexadecimal and decimal literals.
@@ -1270,7 +1567,7 @@ hexadecimal and decimal literals.
 : let binary: number = 0b1010;
 : let octal: number = 0o744;
 
-** String
+*** String ~string~
 #+cindex:string type
 The type =string= refers to the textual datatype.  TypeScript uses
 either double quotes or single quotes to surround string data.
@@ -1286,7 +1583,54 @@ embedded expressions using the syntax =${ expr }=.
 
 : let sentence: string = `Hello, my name is ${ fullName }.`
 
-** Array
+*** Null ~null~
+#+cindex:null type
+The type =null= is the only value of this type.  It is a subtype of
+all other types, though, which means you can assign =null= to any
+other type, unless {{{option(--strictNullChecks)}}} is used, in which
+case =null= can only be assigned to an =any= type.
+
+*** Undefined ~undefined~
+#+cindex:undefined type
+The type =undefined= is the only value of this type.  It is a subtype
+of all other types as is =null=.  When
+{{{option(--stringNullChecks)}}} is used, =undefined= can be assigned
+to a type of =any= and =void=.
+
+*** Void ~void~
+#+cindex:void type
+The =void= type denotes the absence of having any type at all.  You
+may commonly see this as the return type of functions that do not
+return a value:
+
+#+begin_src js
+function warnUser(): void {
+    console.log("This is my warning message");
+}
+#+end_src
+
+Declaring variables of type =void= is not useful because you can only
+assign =undefined= or =null= to them.
+
+** Object Types
+#+cindex:object types
+#+cindex:members, object
+#+cindex:object members
+#+cindex:properties
+#+cindex:call signatures
+#+cindex:constructor signatures
+#+cindex:index signatures
+#+cindex:signatures
+Object types are the most common types in TypeScript.  They are made
+up of references to classes, interfaces, and anonymous object types.
+Object types are made up of a complex set of members.  These members
+fall into one of four categories:
+- properties,
+- call signatures,
+- constructor signatures, or
+- index signatures.
+
+*** Array
 #+cindex:array type
 Array types can be written in one of two ways.
 
@@ -1299,7 +1643,7 @@ The second way uses a generic array type, =Array<elemType>=:
 
 : let list: Array<number> = [1, 2, 3];
 
-** Tuple
+*** Tuple
 #+cindex:tuple type
 Tuple types allow you to express an array with a fixed number of
 elements whose types are known, but need not be the same.
@@ -1320,7 +1664,7 @@ retrieved:
 
 : console.log(x[0].substring(1)); // OK
 
-** Enum
+*** Enum
 #+cindex:enum type
 An enum is a way of giving more friendly names to sets of numeric
 values.
@@ -1402,35 +1746,6 @@ let list: any[] = [1, true, "free"];
 
 list[1] = 100;
 #+end_src
-
-** Void
-#+cindex:void type
-The =void= type denotes the absence of having any type at all.  You
-may commonly see this as the return type of functions that do not
-return a value:
-
-#+begin_src js
-function warnUser(): void {
-    console.log("This is my warning message");
-}
-#+end_src
-
-Declaring variables of type =void= is not useful because you can only
-assign =undefined= or =null= to them.
-
-** Null
-#+cindex:null type
-The type =null= is the only value of this type.  It is a subtype of
-all other types, though, which means you can assign =null= to any
-other type, unless {{{option(--strictNullChecks)}}} is used, in which
-case =null= can only be assigned to an =any= type.
-
-** Undefined
-#+cindex:undefined type
-The type =undefined= is the only value of this type.  It is a subtype
-of all other types as is =null=.  When
-{{{option(--stringNullChecks)}}} is used, =undefined= can be assigned
-to a type of =any= and =void=.
 
 ** Union Type
 #+cindex:union type
@@ -1789,461 +2104,696 @@ The behavior of literal types is similar to the behavior of
 enumerations, so if you are using only numbers in your literal type,
 consider whether an enumeration would be more expressive in your
 program.
-* Variables
-** Var
-*** Var Scoping Rules
-{{{heading(Function Scope)}}}
+* Functions
+#+cindex:functions
+In TypeScript, while there are classes, namespaces, and modules,
+functions still play the key role in describing how to do things.
+TypeScript also adds some new capabilities to the standard JavaScript
+functions to make them easier to work with.
 
-#+cindex:function scope
-#+cindex:@code{var} declaration
-=var= declarations are accessible anywhere within their containing
-function, module, namespace, or global scope regardless of the
-containing block.  Parameters are also function scoped.
+#+cindex:function, named
+#+cindex:function, anonymous
+#+cindex:anonymous function
+To begin, just as in JavaScript, TypeScript functions can be created
+both as a named function or as an anonymous function.  This allows you
+to choose the most appropriate approach for your application, whether
+you’re building a list of functions in an API or a one-off function to
+hand off to another function.
 
-{{{subheading(Problems with Function Scope)}}}
+To quickly recap what these two approaches look like in JavaScript:
 
-One problem they exacerbate is the fact that it is not an error to
-declare the same variable multiple times.  Variables can be
-accidentally overwritten this way.
+#+caption:A Named Function and an Anonymous Function
+#+name:named-function-anonymous-function
+#+begin_src js
+// Named function
+function add(x, y) {
+    return x + y;
+}
 
-This also occurs within for-loops:
+// Anonymous function
+let myAdd = function(x, y) { return x + y; };
+#+end_src
+
+#+cindex:capture variables
+Just as in JavaScript, functions can refer to variables outside of the
+function body.  When they do so, they’re said to capture these
+variables.  Having a firm understanding how this mechanic works is an
+important piece of working with JavaScript and TypeScript.
 
 #+begin_src js
-for (var i = 0; i < 10; i++) {
-    setTimeout(function() { console.log(i); }, 100 * i);
+let z = 100;
+
+function addToZ(x, y) {
+    return x + y + z;
 }
 #+end_src
 
-{{{noindent}}}which produces the following output:
+** What TypeScript Adds to Functions
+#+cindex:function type annotations
+#+cindex:@code{rest} parameters
+Typescript has added type annotations to the parameter list as well as
+the return type.  Due to the new constraints being placed on the
+parameter list, the concept of function overloads was also included in
+the language specification.  TypeScript also takes advantage of
+JavaScript's =arguments= object and provides syntax for =rest=
+parameters.  Here is an example of a function declaration in
+TypeScript:
 
-#+begin_example
-10
-10
-10
-10
-10
-10
-10
-10
-10
-10
-#+end_example
-
-~setTimeout~ will run a function after some number of milliseconds,
-but only after the for loop has stopped executing; by the time the for
-loop has stopped executing, the value of ~i~ is 10.  So each time the
-given function gets called, it will print out 10!
-
-#+cindex:IIFE
-#+cindex:immediately invoked function expression
-A common work around is to use an IIFE - an Immediately Invoked
-Function Expression - to capture ~i~ at each iteration:
-
-#+begin_src js
-for (var i = 0; i < 10; i++) {
-    // capture the current state of 'i'
-    // by invoking a function with its current value
-    (function(i) {
-        setTimeout(function() { console.log(i); }, 100 * i);
-    })(i);
-}
-#+end_src
-
-The ~i~ in the parameter list actually shadows the ~i~ declared in the
-for loop, and which is used to invoke the function.  The function
-closes over the value of the parameter ~i~ when it is invoked, and
-will be available to the ~setTimeout~ function when it runs much
-later.
-
-** Let
-#+cindex:lexical scope
-#+cindex:block scope
-#+cindex:local variable
-The =let= statement declares a block scope local variable, optionally
-initializing it to a value.  The other difference between =var= and
-=let= is that the latter is initialized to value only when parser
-evaluates it.  The =let= does not create properties of the window
-object when declared globally.  The main difference between =var= and
-=let= is that the scope of a =var= variable is the entire enclosing
-function.
-
-#+begin_src js
-var x = 'global';
-let y = 'global';
-console.log(this.x); // "global"
-console.log(this.y); // undefined
-#+end_src
-
-When a variable is declared using ~let~, it uses what some call
-lexical-scoping or block-scoping.  Unlike variables declared with
-~var~, whose scopes leak out to their containing function,
-block-scoped variables are not visible outside of their nearest
-containing block or =for-loop=.
-
-#+cindex:temporal dead zone
-Another property of block-scoped variables is that they can’t be read
-or written to before they’re actually declared.  While these variables
-are “present” throughout their scope, all points up until their
-declaration are part of their temporal dead zone.  This is just a
-sophisticated way of saying you can’t access them before the ~let~
-statement, and luckily TypeScript will let you know that.
-
-You can still capture a block-scoped variable before it’s declared.
-The only catch is that it’s illegal to call that function before the
-declaration.  If targeting ES2015, a modern runtime will throw an
-error; however, right now TypeScript is permissive and won’t report
-this as an error.
-
-#+begin_src js
-function foo() {
-    // okay to capture 'a'
-    return a;
-}
-
-// illegal call 'foo' before 'a' is declared
-// runtimes should throw an error here
-foo();
-
-let a;
-#+end_src
-
-*** Emulate Private Members
-#+cindex:private member
-In dealing with constructors it is possible to use the ~let~ bindings
-to share one or more private members without using closures:
-
-#+caption:Emulate private members using let
-#+name:emulate-private-members-using-let
 #+begin_src js -n
-var Thing;
-
-{ // BLOCK SCOPE
-  let privateScope = new WeakMap(); // PRIVATE MEMBERS
-  let counter = 0;
-
-  Thing = function() {
-    this.someProperty = 'foo';
-
-    privateScope.set(this, {
-      hidden: ++counter,
-    });
-  };
-
-  Thing.prototype.showPublic = function() {
-    return this.someProperty;
-  };
-
-  Thing.prototype.showPrivate = function() {
-    return privateScope.get(this).hidden;
-  };
-}
-
-console.log(typeof privateScope); // "undefined"
-
-var thing = new Thing();
-
-console.log(thing); // Thing {someProperty: "foo"}
-
-thing.showPublic(); // "foo"
-
-thing.showPrivate(); // 1
-#+end_src
-
-The same privacy pattern with closures over local variables can be
-created with ~var~, but those need a function scope (typically an IIFE
-in the module pattern) instead of just a block scope like in the
-example above.
-
-*** Temporal Dead Zone
-Unlike variables declared with ~var~, which will start with the value
-undefined, ~let~ variables are not initialized until their definition
-is evaluated.  Accessing the variable before the initialization
-results in a =ReferenceError=.  The variable is in a "temporal dead
-zone" from the start of the block until the initialization is
-processed.
-
-Unlike with simply undeclared variables and variables that hold a
-value of =undefined=, using the ~typeof~ operator to check for the
-type of a variable in that variable's TDZ will throw a
-=ReferenceError=:
-
-** Const
-~const~ declarations are another way of declaring variables.  They are
-like ~let~ declarations but, as their name implies, their value cannot
-be changed once they are bound.  In other words, they have the same
-scoping rules as ~let~, but you can’t re-assign to them.  This should
-not be confused with the idea that the values they refer to are
-immutable.  Unless you take specific measures to avoid it, the
-internal state of a ~const~ variable is still modifiable.
-Fortunately, TypeScript allows you to specify that members of an
-object are =readonly=
-
-{{{heading(Principle of Least Privilege)}}}
-
-#+cindex:least privilege
-Applying the principle of /least privilege/, all declarations other
-than those you plan to modify should use ~const~.  The rationale is
-that if a variable didn’t need to get written to, others working on
-the same codebase shouldn’t automatically be able to write to the
-object, and will need to consider whether they really need to reassign
-to the variable.  Using ~const~ also makes code more predictable when
-reasoning about flow of data.
-** Destructuring
-*** Array Destructuring
-#+cindex:destructuring
-#+cindex:array destructuring
-The simplest form of destructuring is array destructuring assignment:
-
-#+begin_src js
-let input = [1, 2];
-let [first, second] = input; // first := 1, second := 2
-#+end_src
-
-This creates two new variables named first and second.  This is
-equivalent to using indexing, but is much more convenient:
-
-#+begin_src js
-first = input[0];
-second = input[1];
-#+end_src
-
-Destructuring works with already-declared variables as well:
-
-#+begin_src js
-// swap variables
-[first, second] = [second, first];
-#+end_src
-
-And with parameters to a function:
-
-#+begin_src js
-function f([first, second]: [number, number]) {
-    console.log(first);
-    console.log(second);
-}
-f([1, 2]);
-#+end_src
-
-You can create a variable for the remaining items in a list using the
-syntax ...:
-
-#+begin_src js
-let [first, ...rest] = [1, 2, 3, 4];
-console.log(first); // outputs 1
-console.log(rest); // outputs [ 2, 3, 4 ]
-#+end_src
-
-Of course, since this is JavaScript, you can just ignore trailing
-elements you don’t care about:
-
-#+begin_src js
-let [first] = [1, 2, 3, 4];
-console.log(first); // outputs 1
-#+end_src
-
-Or other elements:
-
-#+begin_src js
-let [, second, , fourth] = [1, 2, 3, 4];
-console.log(second); // outputs 2
-console.log(fourth); // outputs 4
-#+end_src
-
-*** Tuple Destructuring
-#+cindex:destructuring
-#+cindex:tuple destructuring
-Tuples may be destructured like arrays; the destructuring variables
-get the types of the corresponding tuple elements:
-
-#+begin_src js
-let tuple: [number, string, boolean] = [7, "hello", true];
-
-let [a, b, c] = tuple; // a: number, b: string, c: boolean
-#+end_src
-
-It’s an error to destructure a tuple beyond the range of its elements.
-As with arrays, you can destructure the rest of the tuple with ..., to
-get a shorter tuple; and ignore trailing elements, or other elements.
-
-*** Object Destructuring
-#+cindex:destructuing
-#+cindex:object destructuring
-You can also destructure objects:
-
-#+begin_src js
-let o = {
-    a: "foo",
-    b: 12,
-    c: "bar"
-};
-Let { a, b } = o;
-#+end_src
-
-This creates new variables ~a~ and ~b~ from ~o.a~ and ~o.b~.  Notice
-that you can skip ~c~ if you don’t need it.
-
-Like array destructuring, you can have assignment without declaration:
-
-#+begin_src js
-({ a, b } = { a: "baz", b: 101 });
-#+end_src
-
-Notice that we had to surround this statement with
-parentheses. JavaScript normally parses a ={= as the start of block.
-
-You can create a variable for the remaining items in an object using
-the syntax ...:
-
-#+begin_src js
-let { a, ...passthrough } = o;
-let total = passthrough.b + passthrough.c.length;
-#+end_src
-
-{{{heading(Property Renaming)}}}
-
-#+pindex:property renaming
-You can also give different names to properties:
-
-#+begin_src js
-let { a: newName1, b: newName2 } = o;
-#+end_src
-
-You can read ~a: newName1~ as “a as newName1”.  The direction is
-left-to-right, as if you had written:
-
-#+begin_src js
-let newName1 = o.a;
-let newName2 = o.b;
-#+end_src
-
-Confusingly, the colon here does not indicate the type.  The type, if
-you specify it, still needs to be written after the entire
-destructuring:
-
-#+begin_src js
-let { a, b }: { a: string, b: number } = o;
-#+end_src
-
-{{{heading(Default Values)}}}
-
-#+cindex:default values
-Default values let you specify a default value in case a property is
-=undefined=:
-
-#+begin_src js
-function keepWholeObject(wholeObject: { a: string, b?: number }) {
-    let { a, b = 1001 } = wholeObject;
+function add(x: number, y: number): number {
+   return x + y;
 }
 #+end_src
 
-In this example the ~b?~ indicates that ~b~ is optional, so it may be
-=undefined=.  ~keepWholeObject~ now has a variable for ~wholeObject as
-well as the properties ~a~ and ~b~, even if ~b~ is =undefined=.
+#+cindex:optional parameters
+TypeScript provides a way to provide optional parameters to functions:
 
-*** Function Declarations and Destructuring
-#+cindex:destructuring
-#+cindex:function declarations and destructuring
-Destructuring also works in function declarations. For simple cases
-this is straightforward:
-
-#+begin_src js
-type C = { a: string, b?: number }
-function f({ a, b }: C): void {
-    // ...
-}
-#+end_src
-
-But specifying defaults is more common for parameters, and getting
-defaults right with destructuring can be tricky.  First of all, you
-need to remember to put the pattern before the default value.
-
-#+begin_src js
-function f({ a="", b=0 } = {}): void {
-    // ...
-}
-f();
-#+end_src
-
-Then, you need to remember to give a default for optional properties
-on the destructured property instead of the main initializer.  Remember
-that ~C~ was defined with ~b~ optional:
-
-#+begin_src js
-function f({ a, b=0 } = { a: "" }): void {
-    // ...
-}
-f({ a: "yes" }); // ok, default b = 0
-f(); // ok, default to { a: "" }, which then defaults b = 0
-f({}); // error, 'a' is required if you supply an argument
-#+end_src
-
-Use destructuring with care.  As the previous example demonstrates,
-anything but the simplest destructuring expression is confusing.  This
-is especially true with deeply nested destructuring, which gets really
-hard to understand even without piling on renaming, default values,
-and type annotations.  Try to keep destructuring expressions small and
-simple.  You can always write the assignments that destructuring would
-generate yourself.
-** Spreading
-#+cindex:@code{spread} operator
-#+cindex:spreading
-The =spread= operator is the opposite of destructuring.  It allows you
-to spread an array into another array, or an object into another
-object.  For example:
-
-#+begin_src js
-let first = [1, 2];
-let second = [3, 4];
-let bothPlus = [0, ...first, ...second, 5];
-#+end_src
-
-#+cindex:shallow copy, @code{spread} operator
-This gives ~bothPlus~ the value =[0, 1, 2, 3, 4, 5]=.  Spreading
-creates a shallow copy of first and second.  They are not changed by
-the spread.
-
-You can also spread objects:
-
-#+begin_src js
-let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
-let search = { ...defaults, food: "rich" };
-#+end_src
-
-Now search is ={ food: "rich", price: "$$", ambiance: "noisy" }=.
-Object spreading is more complex than array spreading.  Like array
-spreading, it proceeds from left-to-right, but the result is still an
-object.  This means that properties that come later in the spread
-object overwrite properties that come earlier.  So if we modify the
-previous example to spread at the end:
-
-#+begin_src js
-let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
-let search = { food: "rich", ...defaults };
-#+end_src
-
-Then the =food= property in defaults overwrites =food: "rich"=, which
-is not what we want in this case.
-
-Object spread also has a couple of other surprising limits.  First, it
-only includes an objects’ own, enumerable properties.  Basically, that
-means you lose methods when you spread instances of an object:
-
-#+begin_src js
-class C {
-  p = 12;
-  m() {
+#+begin_src js -n
+  function add(x: number, y: number, z?: number) {
+      if (z != undefined) {
+          return x + y + z;
+      }
+      return x + y;
   }
-}
-let c = new C();
-let clone = { ...c };
-clone.p; // ok
-clone.m(); // error!
 #+end_src
 
-Second, the Typescript compiler doesn’t allow spreads of type
-parameters from generic functions.  That feature is expected in future
-versions of the language.
+Optional parameters tell the compiler not to generate an error if the
+parameter is not provided when the function is called.  In JavaScript,
+this compile-time checking is not performed, meaning an exception
+could occur at runtime because each missing parameter will have a
+value of =undefined=.
+
+#+cindex:overloaded functions
+The above function can be overloaded to add strings as well as
+numbers:
+
+#+begin_src js -n
+  function add(x: string, y: string): string;
+  function add(x: number, y: number): number;
+  function add(x: any, y: any): {
+      return x + y;
+  }
+#+end_src
+
+Attempting to call the ~add~ method with anything other than a number
+or string will fail at compile time, but the overloads have no effect
+on the generated JavaScript.  All of the annotations are stripped out,
+as well as the overloads, and all that is left is a very simple
+JavaScript method:
+
+#+begin_src js -n
+  function add(x, y) {
+      return x + y;
+  }
+#+end_src
+
+#+cindex:rest parameters
+TypeScript includes =rest= parameters, which is an unbounded list of
+optional parameters.  The following code shows how to modify the ~add~
+function to include a =rest= parameter:
+
+#+begin_src js -n
+  function add(arg1: string, ...args: string[]): string;
+  function add(arg1: number, ...args: number[]): number;
+  function add(arg1: any, ...args: any[]): any {
+      var total = arg1;
+      for (var i = 0; i < args.length; i++) {
+          total += args[1];
+      }
+      return total;
+  }
+#+end_src
+
+The TypeScript compiler generates an extra bit of JavaScript code to
+generate a shifted array from the JavaScript =arguments= object that
+is available to code inside of the function.
+
+#+begin_src js -n
+  function add(arg1) {
+      var args = [];
+      for (var _i = 0; _i < (arguments.length - 1); _i++) {
+          args[_i] = arguments[_i + 1];
+      }
+      var total = args1;
+      for (var i = 0; i < args.length; i++) {
+          total += args[i];
+      }
+      return total;
+  }
+#+end_src
+
+Now adding numbers or strings together is very simple and completely
+type-safe.  If you attempt to mix the different parameter types, a
+compile error will occur.
+
+** Function Types
+#+cindex:function type
+{{{heading(Typing the Function)}}}
+
+Let’s add types to our simple examples from earlier:
+
+#+begin_src js
+function add(x: number, y: number): number {
+    return x + y;
+}
+
+let myAdd = function(x: number, y: number): number { return x + y; };
+#+end_src
+
+We can add types to each of the parameters and then to the function
+itself to add a return type.  TypeScript can figure the return type
+out by looking at the return statements, so we can also optionally
+leave this off in many cases.
+
+{{{heading(Writing the Function Type)}}}
+
+Let’s write the full type of the function out by looking at each piece
+of the function type.
+
+#+begin_src js
+let myAdd: (x: number, y: number) => number =
+    function(x: number, y: number): number { return x + y; };
+#+end_src
+
+A function’s type has the same two parts: the type of the arguments
+and the return type.  When writing out the whole function type, both
+parts are required.
+
+{{{subheading(Parameter Types)}}}
+
+We write out the parameter types just like a parameter list, giving
+each parameter a name and a type.  This name is just to help with
+readability.  We could have instead written:
+
+#+begin_src js
+let myAdd: (baseValue: number, increment: number) => number =
+    function(x: number, y: number): number { return x + y; };
+#+end_src
+
+As long as the parameter types line up, it’s considered a valid type
+for the function, regardless of the names you give the parameters in
+the function type.
+
+{{{subheading(Return Type)}}}
+
+The second part is the return type.  We make it clear which is the
+return type by using a fat arrow (~=>~) between the parameters and the
+return type.  As mentioned before, this is a required part of the
+function type, so if the function doesn’t return a value, you would
+use =void= instead of leaving it off.
+
+#+cindex:captured variables
+#+cindex:hidden state
+Of note, only the parameters and the return type make up the function
+type.  Captured variables are not reflected in the type.  In effect,
+captured variables are part of the “hidden state” of any function and
+do not make up its API.
+
+{{{heading(Inferring the Types)}}}
+
+In playing with the example, you may notice that the TypeScript
+compiler can figure out the type even if you only have types on one
+side of the equation:
+
+#+begin_src js
+// myAdd has the full function type
+let myAdd = function(x: number, y: number): number { return  x + y; };
+
+// The parameters 'x' and 'y' have the type number
+let myAdd: (baseValue: number, increment: number) => number =
+    function(x, y) { return x + y; };
+#+end_src
+
+#+cindex:contextual typing
+#+cindex:type inference
+This is called “contextual typing”, a form of type inference.  This
+helps cut down on the amount of effort to keep your program typed.
+
+** Optional and Default Parameters
+In TypeScript, every parameter is assumed to be required by the
+function.  This doesn’t mean that it can’t be given null or undefined,
+but rather, when the function is called, the compiler will check that
+the user has provided a value for each parameter.  The compiler also
+assumes that these parameters are the only parameters that will be
+passed to the function.  In short, the number of arguments given to a
+function has to match the number of parameters the function expects.
+
+#+begin_src js
+function buildName(firstName: string, lastName: string) {
+    return firstName + " " + lastName;
+}
+
+let result1 = buildName("Bob");                  // error, too few parameters
+let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
+let result3 = buildName("Bob", "Adams");         // ah, just right
+#+end_src
+
+In JavaScript, every parameter is optional, and users may leave them
+off as they see fit.  When they do, their value is =undefined=.  We
+can get this functionality in TypeScript by adding a =?= to the end of
+parameters we want to be optional.  For example, let’s say we want the
+last name parameter from above to be optional:
+
+#+begin_src js
+function buildName(firstName: string, lastName?: string) {
+    if (lastName)
+        return firstName + " " + lastName;
+    else
+        return firstName;
+}
+
+let result1 = buildName("Bob");                  // works correctly now
+let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
+let result3 = buildName("Bob", "Adams");         // ah, just right
+#+end_src
+
+Any optional parameters must follow required parameters.  Had we
+wanted to make the first name optional, rather than the last name, we
+would need to change the order of parameters in the function, putting
+the first name last in the list.
+
+#+cindex:default-initialized parameter
+In TypeScript, we can also set a value that a parameter will be
+assigned if the user does not provide one, or if the user passes
+undefined in its place.  These are called default-initialized
+parameters.  Let’s take the previous example and default the last name
+to "Smith".
+
+#+begin_src js
+function buildName(firstName: string, lastName = "Smith") {
+    return firstName + " " + lastName;
+}
+
+let result1 = buildName("Bob");                  // works correctly now, returns "Bob Smith"
+let result2 = buildName("Bob", undefined);       // still works, also returns "Bob Smith"
+let result3 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
+let result4 = buildName("Bob", "Adams");         // ah, just right
+#+end_src
+
+Default-initialized parameters that come after all required parameters
+are treated as optional, and just like optional parameters, can be
+omitted when calling their respective function. This means optional
+parameters and trailing default parameters will share commonality in
+their types, so both:
+
+#+begin_src js
+function buildName(firstName: string, lastName?: string) {
+    // ...
+}
+#+end_src
+
+and
+
+#+begin_src js
+function buildName(firstName: string, lastName = "Smith") {
+    // ...
+}
+#+end_src
+
+{{{noindent}}}share the same type =(firstName: string, lastName?:
+string) => string=.  The default value of =lastName= disappears in the
+type, only leaving behind the fact that the parameter is optional.
+
+Unlike plain optional parameters, default-initialized parameters don’t
+need to occur after required parameters.  If a default-initialized
+parameter comes before a required parameter, users need to explicitly
+pass =undefined= to get the default initialized value.  For example,
+we could write our last example with only a default initializer on
+=firstName=:
+
+#+begin_src js
+function buildName(firstName = "Will", lastName: string) {
+    return firstName + " " + lastName;
+}
+
+let result1 = buildName("Bob");                  // error, too few parameters
+let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
+let result3 = buildName("Bob", "Adams");         // okay and returns "Bob Adams"
+let result4 = buildName(undefined, "Adams");     // okay and returns "Will Adams"
+#+end_src
+
+** Rest Parameters
+#+cindex:rest parameters
+Required, optional, and default parameters all have one thing in
+common: they talk about one parameter at a time.  Sometimes, you want
+to work with multiple parameters as a group, or you may not know how
+many parameters a function will ultimately take.  In JavaScript, you
+can work with the arguments directly using the ~arguments~ variable
+that is visible inside every function body.
+
+In TypeScript, you can gather these arguments together into a
+variable:
+
+#+begin_src js
+function buildName(firstName: string, ...restOfName: string[]) {
+    return firstName + " " + restOfName.join(" ");
+}
+
+// employeeName will be "Joseph Samuel Lucas MacKinzie"
+let employeeName = buildName("Joseph", "Samuel", "Lucas", "MacKinzie");
+#+end_src
+
+Rest parameters are treated as a boundless number of optional
+parameters.  When passing arguments for a rest parameter, you can use
+as many as you want; you can even pass none.  The compiler will build
+an array of the arguments passed in with the name given after the
+ellipsis (=...=), allowing you to use it in your function.
+
+The ellipsis is also used in the type of the function with rest
+parameters:
+
+#+begin_src js
+function buildName(firstName: string, ...restOfName: string[]) {
+    return firstName + " " + restOfName.join(" ");
+}
+
+let buildNameFun: (fname: string, ...rest: string[]) => string = buildName;
+#+end_src
+
+** this in Function Declarations
+TypeScript lets you catch incorrect uses of this with a couple of
+techniques.
+
+{{{this and Arrow Functions)}}}
+
+In JavaScript, ~this~ is a variable that’s set when a function is
+called.  This makes it a very powerful and flexible feature, but it
+comes at the cost of always having to know about the context that a
+function is executing in.  This is notoriously confusing, especially
+when returning a function or passing a function as an argument.
+
+Let’s look at an example:
+
+#+begin_src js
+let deck = {
+    suits: ["hearts", "spades", "clubs", "diamonds"],
+    cards: Array(52),
+    createCardPicker: function() {
+        return function() {
+            let pickedCard = Math.floor(Math.random() * 52);
+            let pickedSuit = Math.floor(pickedCard / 13);
+
+            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
+        }
+    }
+}
+
+let cardPicker = deck.createCardPicker();
+let pickedCard = cardPicker();
+
+alert("card: " + pickedCard.card + " of " + pickedCard.suit);
+#+end_src
+
+Notice that ~createCardPicker~ is a function that itself returns a
+function.  If we tried to run the example, we would get an error
+instead of the expected alert box.  This is because the ~this~ being
+used in the function created by ~createCardPicker~ will be set to
+=window= instead of our =deck= object.  That’s because we call
+~cardPicker()~ on its own.  A top-level non-method syntax call like
+this will use =window= for this.  (Note: under strict mode, this will
+be =undefined= rather than window).
+
+We can fix this by making sure the function is bound to the correct
+~this~ before we return the function to be used later.  This way,
+regardless of how it’s later used, it will still be able to see the
+original =deck= object.  To do this, we change the function expression
+to use the ECMAScript 6 arrow syntax.  Arrow functions capture the
+~this~ where the function is created rather than where it is invoked:
+
+#+begin_src js
+let deck = {
+    suits: ["hearts", "spades", "clubs", "diamonds"],
+    cards: Array(52),
+    createCardPicker: function() {
+        // NOTE: the line below is now an arrow function, allowing us to capture 'this' right here
+        return () => {
+            let pickedCard = Math.floor(Math.random() * 52);
+            let pickedSuit = Math.floor(pickedCard / 13);
+
+            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
+        }
+    }
+}
+
+let cardPicker = deck.createCardPicker();
+let pickedCard = cardPicker();
+
+alert("card: " + pickedCard.card + " of " + pickedCard.suit);
+#+end_src
+
+Even better, TypeScript will warn you when you make this mistake if
+you pass the {{{option(--noImplicitThis)}}} flag to the compiler.  It
+will point out that this in ~this.suits[pickedSuit]~ is of type =any=.
+
+{{{heading(this Parameters)}}}
+
+Unfortunately, the type of ~this.suits[pickedSuit]~ is still =any=.
+That’s because ~this~ comes from the function expression inside the
+object literal.  To fix this, you can provide an explicit ~this~
+parameter.  ~this~ parameters are fake parameters that come first in
+the parameter list of a function:
+
+#+begin_src js
+function f(this: void) {
+    // make sure `this` is unusable in this standalone function
+}
+#+end_src
+
+Let’s add a couple of interfaces to our example above, =Card= and
+=Deck=, to make the types clearer and easier to reuse:
+
+#+begin_src js
+interface Card {
+    suit: string;
+    card: number;
+}
+interface Deck {
+    suits: string[];
+    cards: number[];
+    createCardPicker(this: Deck): () => Card;
+}
+let deck: Deck = {
+    suits: ["hearts", "spades", "clubs", "diamonds"],
+    cards: Array(52),
+    // NOTE: The function now explicitly specifies that its callee must be of type Deck
+    createCardPicker: function(this: Deck) {
+        return () => {
+            let pickedCard = Math.floor(Math.random() * 52);
+            let pickedSuit = Math.floor(pickedCard / 13);
+
+            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
+        }
+    }
+}
+
+let cardPicker = deck.createCardPicker();
+let pickedCard = cardPicker();
+
+alert("card: " + pickedCard.card + " of " + pickedCard.suit);
+#+end_src
+
+Now TypeScript knows that ~createCardPicker~ expects to be called on a
+=Deck= object.  That means that ~this~ is of type =Deck= now, not
+=any=, so {{{option(--noImplicitThis)}}} will not cause any errors
+
+{{{heading(this Parameters in Callbacks)}}}
+
+You can also run into errors with ~this~ in callbacks, when you pass
+functions to a library that will later call them.  Because the library
+that calls your callback will call it like a normal function, this
+will be =undefined=.  With some work you can use ~this~ parameters to
+prevent errors with callbacks too.  First, the library author needs to
+annotate the callback type with ~this~:
+
+#+begin_src js
+interface UIElement {
+    addClickListener(onclick: (this: void, e: Event) => void): void;
+}
+#+end_src
+
+~this: void~ means that ~addClickListener~ expects ~onclick~ to be a
+function that does not require a ~this~ type.  Second, annotate your
+calling code with ~this~:
+
+#+begin_src js
+class Handler {
+    info: string;
+    onClickBad(this: Handler, e: Event) {
+        // oops, used `this` here. using this callback would crash at runtime
+        this.info = e.message;
+    }
+}
+let h = new Handler();
+uiElement.addClickListener(h.onClickBad); // error!
+#+end_src
+
+With ~this~ annotated, you make it explicit that ~onClickBad~ must be
+called on an instance of =Handler.  Then TypeScript will detect that
+~addClickListener~ requires a function that has ~this: void~.  To fix
+the error, change the type of ~this~:
+
+#+begin_src js
+class Handler {
+    info: string;
+    onClickGood(this: void, e: Event) {
+        // can't use `this` here because it's of type void!
+        console.log('clicked!');
+    }
+}
+let h = new Handler();
+uiElement.addClickListener(h.onClickGood);
+#+end_src
+
+Because ~onClickGood~ specifies its ~this~ type as =void=, it is legal
+to pass to ~addClickListener~.  Of course, this also means that it
+can’t use ~this.info~.  If you want both then you’ll have to use an
+arrow function:
+
+#+begin_src js
+class Handler {
+    info: string;
+    onClickGood = (e: Event) => { this.info = e.message }
+}
+#+end_src
+
+This works because arrow functions use the outer ~this~, so you can
+always pass them to something that expects ~this: void~.  The downside
+is that one arrow function is created per object of type =Handler=.
+Methods, on the other hand, are only created once and attached to
+=Handler= ’s prototype.  They are shared between all objects of type
+=Handler=.
+
+** Overloads
+#+cindex:overload function method
+JavaScript is inherently a very dynamic language.  It’s not uncommon
+for a single JavaScript function to return different types of objects
+based on the shape of the arguments passed in.
+
+#+begin_src js
+let suits = ["hearts", "spades", "clubs", "diamonds"];
+
+function pickCard(x): any {
+    // Check to see if we're working with an object/array
+    // if so, they gave us the deck and we'll pick the card
+    if (typeof x == "object") {
+        let pickedCard = Math.floor(Math.random() * x.length);
+        return pickedCard;
+    }
+    // Otherwise just let them pick the card
+    else if (typeof x == "number") {
+        let pickedSuit = Math.floor(x / 13);
+        return { suit: suits[pickedSuit], card: x % 13 };
+    }
+}
+
+let myDeck = [{ suit: "diamonds", card: 2 }, { suit: "spades", card: 10 }, { suit: "hearts", card: 4 }];
+let pickedCard1 = myDeck[pickCard(myDeck)];
+alert("card: " + pickedCard1.card + " of " + pickedCard1.suit);
+
+let pickedCard2 = pickCard(15);
+alert("card: " + pickedCard2.card + " of " + pickedCard2.suit);
+#+end_src
+
+Here, the ~pickCard~ function will return two different things based
+on what the user has passed in.  If the users passes in an object that
+represents the deck, the function will pick the card.  If the user
+picks the card, we tell them which card they’ve picked.  But how do we
+describe this to the type system?
+
+#+cindex:overload list
+The answer is to supply multiple function types for the same function
+as a list of overloads.  This list is what the compiler will use to
+resolve function calls.  Let’s create a list of overloads that
+describe what our ~pickCard~ accepts and what it returns.
+
+#+begin_src js
+let suits = ["hearts", "spades", "clubs", "diamonds"];
+
+function pickCard(x: {suit: string; card: number; }[]): number;
+function pickCard(x: number): {suit: string; card: number; };
+function pickCard(x): any {
+    // Check to see if we're working with an object/array
+    // if so, they gave us the deck and we'll pick the card
+    if (typeof x == "object") {
+        let pickedCard = Math.floor(Math.random() * x.length);
+        return pickedCard;
+    }
+    // Otherwise just let them pick the card
+    else if (typeof x == "number") {
+        let pickedSuit = Math.floor(x / 13);
+        return { suit: suits[pickedSuit], card: x % 13 };
+    }
+}
+
+let myDeck = [{ suit: "diamonds", card: 2 }, { suit: "spades", card: 10 }, { suit: "hearts", card: 4 }];
+let pickedCard1 = myDeck[pickCard(myDeck)];
+alert("card: " + pickedCard1.card + " of " + pickedCard1.suit);
+
+let pickedCard2 = pickCard(15);
+alert("card: " + pickedCard2.card + " of " + pickedCard2.suit);
+#+end_src
+
+With this change, the overloads now give us type checked calls to the
+~pickCard~ function.
+
+In order for the compiler to pick the correct type check, it follows a
+similar process to the underlying JavaScript.  It looks at the
+overload list and, proceeding with the first overload, attempts to
+call the function with the provided parameters.  If it finds a match,
+it picks this overload as the correct overload.  For this reason, it’s
+customary to order overloads from most specific to least specific.
+
+Note that the function ~pickCard(x): any~ piece is not part of the
+overload list, so it only has two overloads: one that takes an object
+and one that takes a number.  Calling ~pickCard~ with any other
+parameter types would cause an error.
 * Interfaces
+Interfaces are a way of representing complex types about any object.
+They have absolutely no runtime consequences because JavaScript does
+not include any sort of runtime type checking.  Interfaces are
+analyzed at compile time and then omitted from the resulting
+JavaScript.  Interfaces create a contract for developers to use when
+developing new objects or writing methods to interact with existing
+ones.  Interfaces are named types that contain a list of members.
+
+** Example of a Simple Interface and Inheritance
+Here is an example of a simple interface:
+
+#+begin_src js -n
+  interface IPoint {
+      x: number;
+      y: number;
+  }
+#+end_src
+
+You use the ~interface~ keyword to start the interface declaration.
+Then you give the interface a name to reference the code.
+
+A simple naming convention can improve the readability of code when
+using interfaces.  Interfaces can be given the format ~I<name>~ and
+object types just use the ~<name>~, e.g., ~IFoo~ and ~Foo~.
+
+The interface's declaration body contains just a list of members and
+functions and their types.  Interface members can only be instance
+members of an object.
+
+Interfaces have the ability to inherit from base types.  This
+interface inheritance allows interfaces to be extended from existing
+interfaces into a more enhanced version as well as merge separate
+interfaces together.  To create an inheritance chain, interfaces use
+the ~extends~ clause.  The ~extends~ clause is followed by a
+comma-separated list of types that the interface will merge with.
+
+: interface IFoo extends IBar, IQuux { body }
+
+Interfaces can be referenced in code as type parameters or type
+declarations.  Further, interface declarations are open-ended and will
+implicitly merge together if they have the same if they have the same
+type name.  The TypeScript compiler also implements a duck typing
+system that allows you to create objects on the fly while keeping type
+safety.
+
+** Interface Introduction and Duck Typing
 #+cindex:interfaces, introduction
 #+cindex:duck typing
 #+cindex:structural subtyping
@@ -2925,6 +3475,97 @@ subtypes of =SelectableControl= (because they both inherit from
 =Control= and have a =select= method), but the =Image= and =Location=
 classes are not.
 * Classes
+Classes consist of a variety of different properties and members.
+These members can be either public or private, and static or instance.
+
+** Creating Classes
+   #+cindex:classes
+   Creating classes in Typescript is essentially the same as creating
+   interfaces.  Here is a simple =Point= class that keeps track of an ~x~
+   and ~y~ position.
+
+   #+begin_src js -n
+  class Point {
+      public x: number;
+      public y: number;
+      constructor(x: number, y = 0) {
+          this.x = x;
+          this.y = y;
+      }
+  }
+   #+end_src
+
+   This example includes a default value for the property ~y~.
+   TypeScript treats parameters with default values as optional
+   parameters.  This provides a simple method for ensuring you are always
+   operating on instantiated objects.
+
+   Here is the JavaScript output for the =Point= class:
+
+   #+begin_src js -n
+     var Point = (function () {
+	 function Point(x, y) {
+	     if (typeof y == "undefined") { y = 0; }
+	     this.x = x;
+	     this.y = y;
+	 }
+	 return Point;
+     })();
+   #+end_src
+
+*** TypeScript Classes and JavaScript Closures
+   #+cindex:closures
+   Public methods and and static members will be added to the =Point=
+   function's prototype.  Classes, modules, and enums in TypeScript all
+   compile into JavaScript closures.  Closures are a JavaScript construct
+   that provide a way of creating a private state for a specific segment
+   of code.  When a closure is created, it contains two things:
+
+   - a function; and
+   - the state of the environment when the function was created.
+
+
+   The function is returned to the caller of the closure and the state is
+   used when the function is called.
+
+*** How Interfaces and Classes Interact
+Classes can optionally inherit type information from interfaces using
+the ~implements~ keyword.  The class will then be required to
+implement all of the interface members.  Note that decorating the
+constructor's parameters with ~public~ or ~private~ keywords tells
+TypeScript to treat those objects as part of the type and not just
+initialization parameters.
+
+Providing a comma-separated list of interfaces after the ~implements~
+keyword allows the class to provide implementations of a variety of
+different contracts.
+
+#+begin_src js -n
+  interface IPoint {
+      x: number;
+      y: number;
+  }
+
+  interface ICompare {
+      Compare(p2: IPoint): number
+  }
+
+  class Point implements IPoint, ICompare {
+      constructor(public x: number, public y = 0) {
+      }
+      public Compare(p2: IPoint):number {
+	      // <return 0, 1, or -1>
+      }
+  }
+#+end_src
+
+Keeping the interfaces simple allows them to be more reusable across
+applications.  The ~Compare~ method could easily have been placed on
+the IPoint interface to achieve the same result.  However, any number
+of types could implement the ICompare interface, which have no need
+for the members ~x~ and ~y~.
+
+** A Simple Class-Based Example
 #+cindex:ECMAScript 2015
 #+cindex:class-based construction
 Starting with ECMAScript 2015, also known as ECMAScript 6, JavaScript
@@ -3066,6 +3707,54 @@ Sammy the Python moved 5m.
 Galloping...
 Tommy the Palomino moved 34m.
 #+end_example
+
+** Instance Member Functions
+Instance member functions are only available to an instance of the
+object of the type and they have access to the ~this~ object that
+allows easy access to all of an object's members.  In JavaScript there
+are a couple of ways to create instance member functions: they can be
+added directly to the object using the ~this~ object during the
+object's creation, or they can be attached to the object's prototype.
+TypeScript has adopted the latter method.
+
+In the following code, an interface is created which includes an
+instance member function, or method, and a class is implemented based
+upon this interface.  The class does not include a constructor, but it
+does include default values for the instance members.  Below the class
+definition is a representation of the transpiled JavaScript code.
+This code is given a constructor that initializes the instance members
+using the default parameter values, and places the method on the
+constructor's prototype.
+
+#+begin_src js -n
+  interface IBounds {
+      Location: IPoint;
+      Height: number;
+      Width: number;
+      Size(): number;
+  }
+
+  class Bounds implements IBound {
+      public Location: IPoint = new Point(0, 0);
+      public Height: number = 0;
+      public Width: number = 0;
+      public Size() {
+          return this.Height * this.Width;
+      }
+  }
+
+  var Bounds = (function () {
+      function Bounds() {
+          this.Location = new Point(0, 0);
+          this.Height = 0;
+          this.Width = 0;
+      }
+      Bounds.prototype.Size = function () {
+          return this.Height * this.Width;
+      }
+      return Bounds;
+      })();
+#+end_src
 
 ** Public Private Protected Modifiers
 {{{heading(Public by Default)}}}
@@ -3266,7 +3955,51 @@ with an accessibility modifier or =readonly=, or both.  Using
 =private= member; likewise, the same is done for =public=,
 =protected=, and =readonly=.
 
-** Accessors
+** Property Accessors
+#+cindex:Properties
+#+cindex:ECMAScript 5
+#+cindex:getter
+#+cindex:setter
+#+cindex:@code{get} keyword
+#+cindex:@code{set} keyword
+The concept of =Properties= was introduced in ECMAScript 5.  This
+allows a developer to create getter and setter methods for a
+designated instance method that can be accessed like properties.  The
+TypeScript compiler must be set to emit ECMAScript 5 code, and then
+you will be able to use the =get= and =set= keywords to define
+properties.  Since getters and setters are method calls, they allow
+the programmer to verify constraints placed on instance members.
+
+#+begin_src js -n
+  interface IBounds {
+      Location: IPoint;
+      Height: number;
+      Width: number;
+      Size(): number;
+  }
+
+  class Bounds implements IBounds {
+      public Location: IPoint = new Point(0, 0);
+      private _height: number = 0;
+      private _width: number = 0;
+      public Size() {
+          return this.Height * this.Width;
+      }
+      get Height(): number {
+          return this._height;
+      }
+      set Height(value: number) {
+          this._height = (value > 0) ? value : 0;
+      }
+      get Width(): number {
+          return this._width;
+      }
+      set Width(value: number) {
+          this._width = (value > 0) ? value : 0;
+      }
+  }
+#+end_src
+
 #+cindex:accessor
 TypeScript supports =getters/setters= as a way of intercepting
 accesses to a member of an object.  This gives you a way of having
@@ -3349,11 +4082,39 @@ A couple of things to note about accessors:
 ** Static Properties
 #+cindex:static properties
 We can also create static members of a class, those that are visible
-on the class itself rather than on the instances.  In this example, we
-use =static= on the origin, as it’s a general value for all grids.
-Each instance accesses this value through prepending the name of the
-class.  Similarly to prepending ~this~ in front of instance accesses,
-here we prepend =Grid.= in front of static accesses.
+on the class itself rather than on the instances.  Static members are
+accessible at any time by referencing the named type.  To declare a
+static member, simply declare it with the ~static~ keyword.
+
+#+begin_src js -n
+  static Compare(p1: Point, p2: Point): number {
+      return p1.Compare(p2);
+  }
+#+end_src
+
+This ~Compare~ method is put directly on the =Point= object being
+created:
+
+#+begin_src js -n
+  var Point = (function () {
+      function Point(x, y) {
+	  ...
+      }
+      Point.prototype.Compare = function(p2) {
+	  ...
+      }
+      Point.Compare = function(p1, p2) {
+	  return p1.Compare(p2);
+      }
+      return Point;
+  })();
+#+end_src
+
+In this example, we use =static= on the origin, as it’s a general
+value for all grids.  Each instance accesses this value through
+prepending the name of the class.  Similarly to prepending ~this~ in
+front of instance accesses, here we prepend =Grid.= in front of static
+accesses.
 
 #+begin_src js
 class Grid {
@@ -3553,551 +4314,131 @@ interface Point3d extends Point {
 
 let point3d: Point3d = {x: 1, y: 2, z: 3};
 #+end_src
-* Functions
-#+cindex:functions
-In TypeScript, while there are classes, namespaces, and modules,
-functions still play the key role in describing how to do things.
-TypeScript also adds some new capabilities to the standard JavaScript
-functions to make them easier to work with.
-
-#+cindex:function, named
-#+cindex:function, anonymous
-#+cindex:anonymous function
-To begin, just as in JavaScript, TypeScript functions can be created
-both as a named function or as an anonymous function.  This allows you
-to choose the most appropriate approach for your application, whether
-you’re building a list of functions in an API or a one-off function to
-hand off to another function.
-
-To quickly recap what these two approaches look like in JavaScript:
-
-#+begin_src js
-// Named function
-function add(x, y) {
-    return x + y;
-}
-
-// Anonymous function
-let myAdd = function(x, y) { return x + y; };
-#+end_src
-
-#+cindex:capture variables
-Just as in JavaScript, functions can refer to variables outside of the
-function body.  When they do so, they’re said to capture these
-variables.  Having a firm understanding how this mechanic works is an
-important piece of working with JavaScript and TypeScript.
-
-#+begin_src js
-let z = 100;
-
-function addToZ(x, y) {
-    return x + y + z;
-}
-#+end_src
-
-** Function Types
-#+cindex:function type
-{{{heading(Typing the Function)}}}
-
-Let’s add types to our simple examples from earlier:
-
-#+begin_src js
-function add(x: number, y: number): number {
-    return x + y;
-}
-
-let myAdd = function(x: number, y: number): number { return x + y; };
-#+end_src
-
-We can add types to each of the parameters and then to the function
-itself to add a return type.  TypeScript can figure the return type
-out by looking at the return statements, so we can also optionally
-leave this off in many cases.
-
-{{{heading(Writing the Function Type)}}}
-
-Let’s write the full type of the function out by looking at each piece
-of the function type.
-
-#+begin_src js
-let myAdd: (x: number, y: number) => number =
-    function(x: number, y: number): number { return x + y; };
-#+end_src
-
-A function’s type has the same two parts: the type of the arguments
-and the return type.  When writing out the whole function type, both
-parts are required.
-
-{{{subheading(Parameter Types)}}}
-
-We write out the parameter types just like a parameter list, giving
-each parameter a name and a type.  This name is just to help with
-readability.  We could have instead written:
-
-#+begin_src js
-let myAdd: (baseValue: number, increment: number) => number =
-    function(x: number, y: number): number { return x + y; };
-#+end_src
-
-As long as the parameter types line up, it’s considered a valid type
-for the function, regardless of the names you give the parameters in
-the function type.
-
-{{{subheading(Return Type)}}}
-
-The second part is the return type.  We make it clear which is the
-return type by using a fat arrow (~=>~) between the parameters and the
-return type.  As mentioned before, this is a required part of the
-function type, so if the function doesn’t return a value, you would
-use =void= instead of leaving it off.
-
-#+cindex:captured variables
-#+cindex:hidden state
-Of note, only the parameters and the return type make up the function
-type.  Captured variables are not reflected in the type.  In effect,
-captured variables are part of the “hidden state” of any function and
-do not make up its API.
-
-{{{heading(Inferring the Types)}}}
-
-In playing with the example, you may notice that the TypeScript
-compiler can figure out the type even if you only have types on one
-side of the equation:
-
-#+begin_src js
-// myAdd has the full function type
-let myAdd = function(x: number, y: number): number { return  x + y; };
-
-// The parameters 'x' and 'y' have the type number
-let myAdd: (baseValue: number, increment: number) => number =
-    function(x, y) { return x + y; };
-#+end_src
-
-#+cindex:contextual typing
-#+cindex:type inference
-This is called “contextual typing”, a form of type inference.  This
-helps cut down on the amount of effort to keep your program typed.
-
-** Optional and Default Parameters
-In TypeScript, every parameter is assumed to be required by the
-function.  This doesn’t mean that it can’t be given null or undefined,
-but rather, when the function is called, the compiler will check that
-the user has provided a value for each parameter.  The compiler also
-assumes that these parameters are the only parameters that will be
-passed to the function.  In short, the number of arguments given to a
-function has to match the number of parameters the function expects.
-
-#+begin_src js
-function buildName(firstName: string, lastName: string) {
-    return firstName + " " + lastName;
-}
-
-let result1 = buildName("Bob");                  // error, too few parameters
-let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
-let result3 = buildName("Bob", "Adams");         // ah, just right
-#+end_src
-
-In JavaScript, every parameter is optional, and users may leave them
-off as they see fit.  When they do, their value is =undefined=.  We
-can get this functionality in TypeScript by adding a =?= to the end of
-parameters we want to be optional.  For example, let’s say we want the
-last name parameter from above to be optional:
-
-#+begin_src js
-function buildName(firstName: string, lastName?: string) {
-    if (lastName)
-        return firstName + " " + lastName;
-    else
-        return firstName;
-}
-
-let result1 = buildName("Bob");                  // works correctly now
-let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
-let result3 = buildName("Bob", "Adams");         // ah, just right
-#+end_src
-
-Any optional parameters must follow required parameters.  Had we
-wanted to make the first name optional, rather than the last name, we
-would need to change the order of parameters in the function, putting
-the first name last in the list.
-
-#+cindex:default-initialized parameter
-In TypeScript, we can also set a value that a parameter will be
-assigned if the user does not provide one, or if the user passes
-undefined in its place.  These are called default-initialized
-parameters.  Let’s take the previous example and default the last name
-to "Smith".
-
-#+begin_src js
-function buildName(firstName: string, lastName = "Smith") {
-    return firstName + " " + lastName;
-}
-
-let result1 = buildName("Bob");                  // works correctly now, returns "Bob Smith"
-let result2 = buildName("Bob", undefined);       // still works, also returns "Bob Smith"
-let result3 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
-let result4 = buildName("Bob", "Adams");         // ah, just right
-#+end_src
-
-Default-initialized parameters that come after all required parameters
-are treated as optional, and just like optional parameters, can be
-omitted when calling their respective function. This means optional
-parameters and trailing default parameters will share commonality in
-their types, so both:
-
-#+begin_src js
-function buildName(firstName: string, lastName?: string) {
-    // ...
-}
-#+end_src
-
-and
-
-#+begin_src js
-function buildName(firstName: string, lastName = "Smith") {
-    // ...
-}
-#+end_src
-
-{{{noindent}}}share the same type =(firstName: string, lastName?:
-string) => string=.  The default value of =lastName= disappears in the
-type, only leaving behind the fact that the parameter is optional.
-
-Unlike plain optional parameters, default-initialized parameters don’t
-need to occur after required parameters.  If a default-initialized
-parameter comes before a required parameter, users need to explicitly
-pass =undefined= to get the default initialized value.  For example,
-we could write our last example with only a default initializer on
-=firstName=:
-
-#+begin_src js
-function buildName(firstName = "Will", lastName: string) {
-    return firstName + " " + lastName;
-}
-
-let result1 = buildName("Bob");                  // error, too few parameters
-let result2 = buildName("Bob", "Adams", "Sr.");  // error, too many parameters
-let result3 = buildName("Bob", "Adams");         // okay and returns "Bob Adams"
-let result4 = buildName(undefined, "Adams");     // okay and returns "Will Adams"
-#+end_src
-
-** Rest Parameters
-#+cindex:rest parameters
-Required, optional, and default parameters all have one thing in
-common: they talk about one parameter at a time.  Sometimes, you want
-to work with multiple parameters as a group, or you may not know how
-many parameters a function will ultimately take.  In JavaScript, you
-can work with the arguments directly using the ~arguments~ variable
-that is visible inside every function body.
-
-In TypeScript, you can gather these arguments together into a
-variable:
-
-#+begin_src js
-function buildName(firstName: string, ...restOfName: string[]) {
-    return firstName + " " + restOfName.join(" ");
-}
-
-// employeeName will be "Joseph Samuel Lucas MacKinzie"
-let employeeName = buildName("Joseph", "Samuel", "Lucas", "MacKinzie");
-#+end_src
-
-Rest parameters are treated as a boundless number of optional
-parameters.  When passing arguments for a rest parameter, you can use
-as many as you want; you can even pass none.  The compiler will build
-an array of the arguments passed in with the name given after the
-ellipsis (=...=), allowing you to use it in your function.
-
-The ellipsis is also used in the type of the function with rest
-parameters:
-
-#+begin_src js
-function buildName(firstName: string, ...restOfName: string[]) {
-    return firstName + " " + restOfName.join(" ");
-}
-
-let buildNameFun: (fname: string, ...rest: string[]) => string = buildName;
-#+end_src
-
-** this in Function Declarations
-TypeScript lets you catch incorrect uses of this with a couple of
-techniques.
-
-{{{this and Arrow Functions)}}}
-
-In JavaScript, ~this~ is a variable that’s set when a function is
-called.  This makes it a very powerful and flexible feature, but it
-comes at the cost of always having to know about the context that a
-function is executing in.  This is notoriously confusing, especially
-when returning a function or passing a function as an argument.
-
-Let’s look at an example:
-
-#+begin_src js
-let deck = {
-    suits: ["hearts", "spades", "clubs", "diamonds"],
-    cards: Array(52),
-    createCardPicker: function() {
-        return function() {
-            let pickedCard = Math.floor(Math.random() * 52);
-            let pickedSuit = Math.floor(pickedCard / 13);
-
-            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
-        }
-    }
-}
-
-let cardPicker = deck.createCardPicker();
-let pickedCard = cardPicker();
-
-alert("card: " + pickedCard.card + " of " + pickedCard.suit);
-#+end_src
-
-Notice that ~createCardPicker~ is a function that itself returns a
-function.  If we tried to run the example, we would get an error
-instead of the expected alert box.  This is because the ~this~ being
-used in the function created by ~createCardPicker~ will be set to
-=window= instead of our =deck= object.  That’s because we call
-~cardPicker()~ on its own.  A top-level non-method syntax call like
-this will use =window= for this.  (Note: under strict mode, this will
-be =undefined= rather than window).
-
-We can fix this by making sure the function is bound to the correct
-~this~ before we return the function to be used later.  This way,
-regardless of how it’s later used, it will still be able to see the
-original =deck= object.  To do this, we change the function expression
-to use the ECMAScript 6 arrow syntax.  Arrow functions capture the
-~this~ where the function is created rather than where it is invoked:
-
-#+begin_src js
-let deck = {
-    suits: ["hearts", "spades", "clubs", "diamonds"],
-    cards: Array(52),
-    createCardPicker: function() {
-        // NOTE: the line below is now an arrow function, allowing us to capture 'this' right here
-        return () => {
-            let pickedCard = Math.floor(Math.random() * 52);
-            let pickedSuit = Math.floor(pickedCard / 13);
-
-            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
-        }
-    }
-}
-
-let cardPicker = deck.createCardPicker();
-let pickedCard = cardPicker();
-
-alert("card: " + pickedCard.card + " of " + pickedCard.suit);
-#+end_src
-
-Even better, TypeScript will warn you when you make this mistake if
-you pass the {{{option(--noImplicitThis)}}} flag to the compiler.  It
-will point out that this in ~this.suits[pickedSuit]~ is of type =any=.
-
-{{{heading(this Parameters)}}}
-
-Unfortunately, the type of ~this.suits[pickedSuit]~ is still =any=.
-That’s because ~this~ comes from the function expression inside the
-object literal.  To fix this, you can provide an explicit ~this~
-parameter.  ~this~ parameters are fake parameters that come first in
-the parameter list of a function:
-
-#+begin_src js
-function f(this: void) {
-    // make sure `this` is unusable in this standalone function
-}
-#+end_src
-
-Let’s add a couple of interfaces to our example above, =Card= and
-=Deck=, to make the types clearer and easier to reuse:
-
-#+begin_src js
-interface Card {
-    suit: string;
-    card: number;
-}
-interface Deck {
-    suits: string[];
-    cards: number[];
-    createCardPicker(this: Deck): () => Card;
-}
-let deck: Deck = {
-    suits: ["hearts", "spades", "clubs", "diamonds"],
-    cards: Array(52),
-    // NOTE: The function now explicitly specifies that its callee must be of type Deck
-    createCardPicker: function(this: Deck) {
-        return () => {
-            let pickedCard = Math.floor(Math.random() * 52);
-            let pickedSuit = Math.floor(pickedCard / 13);
-
-            return {suit: this.suits[pickedSuit], card: pickedCard % 13};
-        }
-    }
-}
-
-let cardPicker = deck.createCardPicker();
-let pickedCard = cardPicker();
-
-alert("card: " + pickedCard.card + " of " + pickedCard.suit);
-#+end_src
-
-Now TypeScript knows that ~createCardPicker~ expects to be called on a
-=Deck= object.  That means that ~this~ is of type =Deck= now, not
-=any=, so {{{option(--noImplicitThis)}}} will not cause any errors
-
-{{{heading(this Parameters in Callbacks)}}}
-
-You can also run into errors with ~this~ in callbacks, when you pass
-functions to a library that will later call them.  Because the library
-that calls your callback will call it like a normal function, this
-will be =undefined=.  With some work you can use ~this~ parameters to
-prevent errors with callbacks too.  First, the library author needs to
-annotate the callback type with ~this~:
-
-#+begin_src js
-interface UIElement {
-    addClickListener(onclick: (this: void, e: Event) => void): void;
-}
-#+end_src
-
-~this: void~ means that ~addClickListener~ expects ~onclick~ to be a
-function that does not require a ~this~ type.  Second, annotate your
-calling code with ~this~:
-
-#+begin_src js
-class Handler {
-    info: string;
-    onClickBad(this: Handler, e: Event) {
-        // oops, used `this` here. using this callback would crash at runtime
-        this.info = e.message;
-    }
-}
-let h = new Handler();
-uiElement.addClickListener(h.onClickBad); // error!
-#+end_src
-
-With ~this~ annotated, you make it explicit that ~onClickBad~ must be
-called on an instance of =Handler.  Then TypeScript will detect that
-~addClickListener~ requires a function that has ~this: void~.  To fix
-the error, change the type of ~this~:
-
-#+begin_src js
-class Handler {
-    info: string;
-    onClickGood(this: void, e: Event) {
-        // can't use `this` here because it's of type void!
-        console.log('clicked!');
-    }
-}
-let h = new Handler();
-uiElement.addClickListener(h.onClickGood);
-#+end_src
-
-Because ~onClickGood~ specifies its ~this~ type as =void=, it is legal
-to pass to ~addClickListener~.  Of course, this also means that it
-can’t use ~this.info~.  If you want both then you’ll have to use an
-arrow function:
-
-#+begin_src js
-class Handler {
-    info: string;
-    onClickGood = (e: Event) => { this.info = e.message }
-}
-#+end_src
-
-This works because arrow functions use the outer ~this~, so you can
-always pass them to something that expects ~this: void~.  The downside
-is that one arrow function is created per object of type =Handler=.
-Methods, on the other hand, are only created once and attached to
-=Handler= ’s prototype.  They are shared between all objects of type
-=Handler=.
-
-** Overloads
-#+cindex:overload function method
-JavaScript is inherently a very dynamic language.  It’s not uncommon
-for a single JavaScript function to return different types of objects
-based on the shape of the arguments passed in.
-
-#+begin_src js
-let suits = ["hearts", "spades", "clubs", "diamonds"];
-
-function pickCard(x): any {
-    // Check to see if we're working with an object/array
-    // if so, they gave us the deck and we'll pick the card
-    if (typeof x == "object") {
-        let pickedCard = Math.floor(Math.random() * x.length);
-        return pickedCard;
-    }
-    // Otherwise just let them pick the card
-    else if (typeof x == "number") {
-        let pickedSuit = Math.floor(x / 13);
-        return { suit: suits[pickedSuit], card: x % 13 };
-    }
-}
-
-let myDeck = [{ suit: "diamonds", card: 2 }, { suit: "spades", card: 10 }, { suit: "hearts", card: 4 }];
-let pickedCard1 = myDeck[pickCard(myDeck)];
-alert("card: " + pickedCard1.card + " of " + pickedCard1.suit);
-
-let pickedCard2 = pickCard(15);
-alert("card: " + pickedCard2.card + " of " + pickedCard2.suit);
-#+end_src
-
-Here, the ~pickCard~ function will return two different things based
-on what the user has passed in.  If the users passes in an object that
-represents the deck, the function will pick the card.  If the user
-picks the card, we tell them which card they’ve picked.  But how do we
-describe this to the type system?
-
-#+cindex:overload list
-The answer is to supply multiple function types for the same function
-as a list of overloads.  This list is what the compiler will use to
-resolve function calls.  Let’s create a list of overloads that
-describe what our ~pickCard~ accepts and what it returns.
-
-#+begin_src js
-let suits = ["hearts", "spades", "clubs", "diamonds"];
-
-function pickCard(x: {suit: string; card: number; }[]): number;
-function pickCard(x: number): {suit: string; card: number; };
-function pickCard(x): any {
-    // Check to see if we're working with an object/array
-    // if so, they gave us the deck and we'll pick the card
-    if (typeof x == "object") {
-        let pickedCard = Math.floor(Math.random() * x.length);
-        return pickedCard;
-    }
-    // Otherwise just let them pick the card
-    else if (typeof x == "number") {
-        let pickedSuit = Math.floor(x / 13);
-        return { suit: suits[pickedSuit], card: x % 13 };
-    }
-}
-
-let myDeck = [{ suit: "diamonds", card: 2 }, { suit: "spades", card: 10 }, { suit: "hearts", card: 4 }];
-let pickedCard1 = myDeck[pickCard(myDeck)];
-alert("card: " + pickedCard1.card + " of " + pickedCard1.suit);
-
-let pickedCard2 = pickCard(15);
-alert("card: " + pickedCard2.card + " of " + pickedCard2.suit);
-#+end_src
-
-With this change, the overloads now give us type checked calls to the
-~pickCard~ function.
-
-In order for the compiler to pick the correct type check, it follows a
-similar process to the underlying JavaScript.  It looks at the
-overload list and, proceeding with the first overload, attempts to
-call the function with the provided parameters.  If it finds a match,
-it picks this overload as the correct overload.  For this reason, it’s
-customary to order overloads from most specific to least specific.
-
-Note that the function ~pickCard(x): any~ piece is not part of the
-overload list, so it only has two overloads: one that takes an object
-and one that takes a number.  Calling ~pickCard~ with any other
-parameter types would cause an error.
-* Generics
 * Enums
+** About Enums
+#+cindex:enum
+#+cindex:named constant
+#+cindex:enum declaration
+Enums are an entity intended for holding a specific value that is
+referenced using a name to keep code readable.  An enum value is
+simply a number or string associated with a named constant.  Here is
+an enum declaration:
+
+#+begin_src js -n
+  enum ShapeType {
+      Rectangle,
+      Circle,
+      Line,
+      Freehand
+  }
+#+end_src
+
+#+cindex:enum value, access
+#+cindex:enum, JavaScript code
+You access the enum values like you were accessing a class's static
+members:  ~ShapeType.Rectangle~.  The real magic behind enums in
+TypeScript is how they are generated in JavaScript:
+
+#+begin_src js -n
+  var ShapeType;
+  (function (ShapeType) {
+      ShapeType[ShapeType["Rectangle"] = 0] = "Rectangle";
+      ShapeType[ShapeType["Circle"] = 1] = "Circle";
+      ShapeType[ShapeType["Line"] = 2] = "Line";
+      ShapeType[ShapeType["Freehand"] = 3] = "Freehand";
+  })(ShapeType || (ShapeType = {}));
+#+end_src
+
+#+cindex:mapping, enum
+TypeScript is creating a two-way mapping between the named constant
+and the number it is mapped to.  This creates a number of ways in
+which you can access the values of an enum.  =ShapeType= has been
+created inside of an anonymous function that returns an object that
+has two been given two properties for each member of the enum.  Taking
+advantage of JavaScript's dynamic typing system, TypeScript adds a
+property with the string value of the member name and maps it to an
+integer value.  That integer value is simultaneously added as a
+property of the =ShapeType= object and is mapped to the string value
+of the named member.  Thus:
+
+: ShapeType[ShapeType.Rectangle]
+
+produces the string "Rectangle".
+
+** Constant Members and Computed Members
+
+{{{heading(Constant Members)}}}
+
+#+cindex:member, constant enum
+#+cindex:member, computer enum
+TypeScript provides two types of enum members that can be created:
+- constant members
+- computed members
+
+
+The above example were all constant members with auto-generated
+constant values, These numbers are sequential starting from zero
+unless a constant value is provided to a member.  Then, all of the
+subsequent members of the =enum= will be in sequence with the number
+given.
+
+{{{heading(Computed Members)}}}
+
+#+cindex:computed member, enum
+Computed members are still named constants but the integer value they
+are mapped to is provided by an expression.  This can be either an
+in-line or a function call to another segment of code.  The only
+stipulation on the expression that you provide is that it returns a
+number.  In the following example, the =ShapeType= enum generates some
+specific indexes as well as creating a computed member:
+
+#+begin_src js -n
+  function GetEnumValue(): number {
+      return Date.now();
+  }
+
+  enum ShapeType {
+      Rectangle = 3,
+      Circle,
+      Line,
+      Freehand,
+      Random = GenEnumValue();
+  }
+
+#+end_src
+
+Here is the generated JavaScript code:
+
+#+begin_src js -n
+  function GetEnumValue() {
+      return Date.now();
+  }
+
+  var Shapetype;
+  (function (ShapeType) {
+      ShapeType[ShapeType["Rectangle"] = 3] = "Rectangle";
+      ShapeType[ShapeType["Circle"] = 4] = "Circle";
+      ShapeType[ShapeType["Line"] = 5] = "Line";
+      ShapeType[ShapeType["Freehand"] = 6] = "Freehand";
+      ShapeType[ShapeType["Randam"] = GetEnumValue()] = "Random";
+  })(ShapeType || (ShapeType = {}));
+#+end_src
+
+The expression provided to the computed member is built directly into
+the enum declaration generated.  The expression will be evaluated at
+runtime but only when =ShapeType= is initialized.  Once the expression
+has been run, the result will remain a member of the =ShapeType=
+object.
+
+** Enums can be Merged
+Enum definitions can be merged.  If two enum declarations are placed
+in different segments of code with the same type name, they will
+contribute to the same object.  You can see this in the last line of
+the enum declaration in the resulting JavaScript.  If the object
+exists, then each new property is added to the existing object;
+otherwise a new object is created and the properties are applied.
+
+** Enum Details
 #+cindex:enum type
 Enums allow us to define a set of named constants.  Using enums can
 make it easier to document intent, or create a set of distinct cases.
@@ -4498,6 +4839,558 @@ that, in regular enums, members that don’t have an initializer will be
 considered constant if its preceding enum member is considered
 constant. In contrast, an ambient (and non-const) enum member that
 does not have initializer is always considered computed.
+* Variables
+** Var
+*** Var Scoping Rules
+{{{heading(Function Scope)}}}
+
+#+cindex:function scope
+#+cindex:@code{var} declaration
+=var= declarations are accessible anywhere within their containing
+function, module, namespace, or global scope regardless of the
+containing block.  Parameters are also function scoped.
+
+{{{subheading(Problems with Function Scope)}}}
+
+One problem they exacerbate is the fact that it is not an error to
+declare the same variable multiple times.  Variables can be
+accidentally overwritten this way.
+
+This also occurs within for-loops:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    setTimeout(function() { console.log(i); }, 100 * i);
+}
+#+end_src
+
+{{{noindent}}}which produces the following output:
+
+#+begin_example
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+#+end_example
+
+~setTimeout~ will run a function after some number of milliseconds,
+but only after the for loop has stopped executing; by the time the for
+loop has stopped executing, the value of ~i~ is 10.  So each time the
+given function gets called, it will print out 10!
+
+#+cindex:IIFE
+#+cindex:immediately invoked function expression
+A common work around is to use an IIFE - an Immediately Invoked
+Function Expression - to capture ~i~ at each iteration:
+
+#+begin_src js
+for (var i = 0; i < 10; i++) {
+    // capture the current state of 'i'
+    // by invoking a function with its current value
+    (function(i) {
+        setTimeout(function() { console.log(i); }, 100 * i);
+    })(i);
+}
+#+end_src
+
+The ~i~ in the parameter list actually shadows the ~i~ declared in the
+for loop, and which is used to invoke the function.  The function
+closes over the value of the parameter ~i~ when it is invoked, and
+will be available to the ~setTimeout~ function when it runs much
+later.
+
+** Let
+#+cindex:lexical scope
+#+cindex:block scope
+#+cindex:local variable
+The =let= statement declares a block scope local variable, optionally
+initializing it to a value.  The other difference between =var= and
+=let= is that the latter is initialized to value only when parser
+evaluates it.  The =let= does not create properties of the window
+object when declared globally.  The main difference between =var= and
+=let= is that the scope of a =var= variable is the entire enclosing
+function.
+
+#+begin_src js
+var x = 'global';
+let y = 'global';
+console.log(this.x); // "global"
+console.log(this.y); // undefined
+#+end_src
+
+When a variable is declared using ~let~, it uses what some call
+lexical-scoping or block-scoping.  Unlike variables declared with
+~var~, whose scopes leak out to their containing function,
+block-scoped variables are not visible outside of their nearest
+containing block or =for-loop=.
+
+#+cindex:temporal dead zone
+Another property of block-scoped variables is that they can’t be read
+or written to before they’re actually declared.  While these variables
+are “present” throughout their scope, all points up until their
+declaration are part of their temporal dead zone.  This is just a
+sophisticated way of saying you can’t access them before the ~let~
+statement, and luckily TypeScript will let you know that.
+
+You can still capture a block-scoped variable before it’s declared.
+The only catch is that it’s illegal to call that function before the
+declaration.  If targeting ES2015, a modern runtime will throw an
+error; however, right now TypeScript is permissive and won’t report
+this as an error.
+
+#+begin_src js
+function foo() {
+    // okay to capture 'a'
+    return a;
+}
+
+// illegal call 'foo' before 'a' is declared
+// runtimes should throw an error here
+foo();
+
+let a;
+#+end_src
+
+*** Emulate Private Members
+#+cindex:private member
+In dealing with constructors it is possible to use the ~let~ bindings
+to share one or more private members without using closures:
+
+#+caption:Emulate private members using let
+#+name:emulate-private-members-using-let
+#+begin_src js -n
+var Thing;
+
+{ // BLOCK SCOPE
+  let privateScope = new WeakMap(); // PRIVATE MEMBERS
+  let counter = 0;
+
+  Thing = function() {
+    this.someProperty = 'foo';
+
+    privateScope.set(this, {
+      hidden: ++counter,
+    });
+  };
+
+  Thing.prototype.showPublic = function() {
+    return this.someProperty;
+  };
+
+  Thing.prototype.showPrivate = function() {
+    return privateScope.get(this).hidden;
+  };
+}
+
+console.log(typeof privateScope); // "undefined"
+
+var thing = new Thing();
+
+console.log(thing); // Thing {someProperty: "foo"}
+
+thing.showPublic(); // "foo"
+
+thing.showPrivate(); // 1
+#+end_src
+
+The same privacy pattern with closures over local variables can be
+created with ~var~, but those need a function scope (typically an IIFE
+in the module pattern) instead of just a block scope like in the
+example above.
+
+*** Temporal Dead Zone
+Unlike variables declared with ~var~, which will start with the value
+undefined, ~let~ variables are not initialized until their definition
+is evaluated.  Accessing the variable before the initialization
+results in a =ReferenceError=.  The variable is in a "temporal dead
+zone" from the start of the block until the initialization is
+processed.
+
+Unlike with simply undeclared variables and variables that hold a
+value of =undefined=, using the ~typeof~ operator to check for the
+type of a variable in that variable's TDZ will throw a
+=ReferenceError=:
+
+** Const
+~const~ declarations are another way of declaring variables.  They are
+like ~let~ declarations but, as their name implies, their value cannot
+be changed once they are bound.  In other words, they have the same
+scoping rules as ~let~, but you can’t re-assign to them.  This should
+not be confused with the idea that the values they refer to are
+immutable.  Unless you take specific measures to avoid it, the
+internal state of a ~const~ variable is still modifiable.
+Fortunately, TypeScript allows you to specify that members of an
+object are =readonly=
+
+{{{heading(Principle of Least Privilege)}}}
+
+#+cindex:least privilege
+Applying the principle of /least privilege/, all declarations other
+than those you plan to modify should use ~const~.  The rationale is
+that if a variable didn’t need to get written to, others working on
+the same codebase shouldn’t automatically be able to write to the
+object, and will need to consider whether they really need to reassign
+to the variable.  Using ~const~ also makes code more predictable when
+reasoning about flow of data.
+** Destructuring
+*** Array Destructuring
+#+cindex:destructuring
+#+cindex:array destructuring
+The simplest form of destructuring is array destructuring assignment:
+
+#+begin_src js
+let input = [1, 2];
+let [first, second] = input; // first := 1, second := 2
+#+end_src
+
+This creates two new variables named first and second.  This is
+equivalent to using indexing, but is much more convenient:
+
+#+begin_src js
+first = input[0];
+second = input[1];
+#+end_src
+
+Destructuring works with already-declared variables as well:
+
+#+begin_src js
+// swap variables
+[first, second] = [second, first];
+#+end_src
+
+And with parameters to a function:
+
+#+begin_src js
+function f([first, second]: [number, number]) {
+    console.log(first);
+    console.log(second);
+}
+f([1, 2]);
+#+end_src
+
+You can create a variable for the remaining items in a list using the
+syntax ...:
+
+#+begin_src js
+let [first, ...rest] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+console.log(rest); // outputs [ 2, 3, 4 ]
+#+end_src
+
+Of course, since this is JavaScript, you can just ignore trailing
+elements you don’t care about:
+
+#+begin_src js
+let [first] = [1, 2, 3, 4];
+console.log(first); // outputs 1
+#+end_src
+
+Or other elements:
+
+#+begin_src js
+let [, second, , fourth] = [1, 2, 3, 4];
+console.log(second); // outputs 2
+console.log(fourth); // outputs 4
+#+end_src
+
+*** Tuple Destructuring
+#+cindex:destructuring
+#+cindex:tuple destructuring
+Tuples may be destructured like arrays; the destructuring variables
+get the types of the corresponding tuple elements:
+
+#+begin_src js
+let tuple: [number, string, boolean] = [7, "hello", true];
+
+let [a, b, c] = tuple; // a: number, b: string, c: boolean
+#+end_src
+
+It’s an error to destructure a tuple beyond the range of its elements.
+As with arrays, you can destructure the rest of the tuple with ..., to
+get a shorter tuple; and ignore trailing elements, or other elements.
+
+*** Object Destructuring
+#+cindex:destructuing
+#+cindex:object destructuring
+You can also destructure objects:
+
+#+begin_src js
+let o = {
+    a: "foo",
+    b: 12,
+    c: "bar"
+};
+Let { a, b } = o;
+#+end_src
+
+This creates new variables ~a~ and ~b~ from ~o.a~ and ~o.b~.  Notice
+that you can skip ~c~ if you don’t need it.
+
+Like array destructuring, you can have assignment without declaration:
+
+#+begin_src js
+({ a, b } = { a: "baz", b: 101 });
+#+end_src
+
+Notice that we had to surround this statement with
+parentheses. JavaScript normally parses a ={= as the start of block.
+
+You can create a variable for the remaining items in an object using
+the syntax ...:
+
+#+begin_src js
+let { a, ...passthrough } = o;
+let total = passthrough.b + passthrough.c.length;
+#+end_src
+
+{{{heading(Property Renaming)}}}
+
+#+pindex:property renaming
+You can also give different names to properties:
+
+#+begin_src js
+let { a: newName1, b: newName2 } = o;
+#+end_src
+
+You can read ~a: newName1~ as “a as newName1”.  The direction is
+left-to-right, as if you had written:
+
+#+begin_src js
+let newName1 = o.a;
+let newName2 = o.b;
+#+end_src
+
+Confusingly, the colon here does not indicate the type.  The type, if
+you specify it, still needs to be written after the entire
+destructuring:
+
+#+begin_src js
+let { a, b }: { a: string, b: number } = o;
+#+end_src
+
+{{{heading(Default Values)}}}
+
+#+cindex:default values
+Default values let you specify a default value in case a property is
+=undefined=:
+
+#+begin_src js
+function keepWholeObject(wholeObject: { a: string, b?: number }) {
+    let { a, b = 1001 } = wholeObject;
+}
+#+end_src
+
+In this example the ~b?~ indicates that ~b~ is optional, so it may be
+=undefined=.  ~keepWholeObject~ now has a variable for ~wholeObject as
+well as the properties ~a~ and ~b~, even if ~b~ is =undefined=.
+
+*** Function Declarations and Destructuring
+#+cindex:destructuring
+#+cindex:function declarations and destructuring
+Destructuring also works in function declarations. For simple cases
+this is straightforward:
+
+#+begin_src js
+type C = { a: string, b?: number }
+function f({ a, b }: C): void {
+    // ...
+}
+#+end_src
+
+But specifying defaults is more common for parameters, and getting
+defaults right with destructuring can be tricky.  First of all, you
+need to remember to put the pattern before the default value.
+
+#+begin_src js
+function f({ a="", b=0 } = {}): void {
+    // ...
+}
+f();
+#+end_src
+
+Then, you need to remember to give a default for optional properties
+on the destructured property instead of the main initializer.  Remember
+that ~C~ was defined with ~b~ optional:
+
+#+begin_src js
+function f({ a, b=0 } = { a: "" }): void {
+    // ...
+}
+f({ a: "yes" }); // ok, default b = 0
+f(); // ok, default to { a: "" }, which then defaults b = 0
+f({}); // error, 'a' is required if you supply an argument
+#+end_src
+
+Use destructuring with care.  As the previous example demonstrates,
+anything but the simplest destructuring expression is confusing.  This
+is especially true with deeply nested destructuring, which gets really
+hard to understand even without piling on renaming, default values,
+and type annotations.  Try to keep destructuring expressions small and
+simple.  You can always write the assignments that destructuring would
+generate yourself.
+** Spreading
+#+cindex:@code{spread} operator
+#+cindex:spreading
+The =spread= operator is the opposite of destructuring.  It allows you
+to spread an array into another array, or an object into another
+object.  For example:
+
+#+begin_src js
+let first = [1, 2];
+let second = [3, 4];
+let bothPlus = [0, ...first, ...second, 5];
+#+end_src
+
+#+cindex:shallow copy, @code{spread} operator
+This gives ~bothPlus~ the value =[0, 1, 2, 3, 4, 5]=.  Spreading
+creates a shallow copy of first and second.  They are not changed by
+the spread.
+
+You can also spread objects:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { ...defaults, food: "rich" };
+#+end_src
+
+Now search is ={ food: "rich", price: "$$", ambiance: "noisy" }=.
+Object spreading is more complex than array spreading.  Like array
+spreading, it proceeds from left-to-right, but the result is still an
+object.  This means that properties that come later in the spread
+object overwrite properties that come earlier.  So if we modify the
+previous example to spread at the end:
+
+#+begin_src js
+let defaults = { food: "spicy", price: "$$", ambiance: "noisy" };
+let search = { food: "rich", ...defaults };
+#+end_src
+
+Then the =food= property in defaults overwrites =food: "rich"=, which
+is not what we want in this case.
+
+Object spread also has a couple of other surprising limits.  First, it
+only includes an objects’ own, enumerable properties.  Basically, that
+means you lose methods when you spread instances of an object:
+
+#+begin_src js
+class C {
+  p = 12;
+  m() {
+  }
+}
+let c = new C();
+let clone = { ...c };
+clone.p; // ok
+clone.m(); // error!
+#+end_src
+
+Second, the Typescript compiler doesn’t allow spreads of type
+parameters from generic functions.  That feature is expected in future
+versions of the language.
+* Generics
+Generics define the third category of objects in TypeScript: type
+parameters.  Type parameters are defined inside of =<...>=.  They can
+be used on interfaces or class definitions to create functionality for
+a broad set of object types that may or may not be known at the time
+of development.
+
+Let’s create a generic task processor.  Assume the simplest possible
+implementation, a sequential process that passes a list of generic
+tasks to a function to have them run.
+
+#+begin_src js -n
+  interface ITask {
+      Id: number;
+      Execute(): boolean;
+      Error: string;
+  }
+
+  function ProcessTask<T extends ITasks>(tasks: T[]): T {
+      for (var i = 0; i < tasks.length; i++) {
+          if (tasks[i].Execute() == false) {
+              return tasks[i];
+          }
+      }
+      return null;
+  }
+#+end_src
+
+An interface has been defined that the task processor will rely on to
+execute a set of tasks sequentially.  The function declaration for
+~ProcessTasks()~ contains a type parameter, =T=, which must adhere to
+the =ITask= interface.  This type parameter is used as a constraint
+for the objects that can be passed in as part of the tasks array, and
+will be the return type of the function.  The tasks array is looped
+through one by one and the ~Execute()~ method is called.  If this
+method returns a =false= value, then the processing stops and the task
+is returned.
+
+Generics are built completely on the type annotations, so they have no
+effect on the generated JavaScript.  However, if the type constraints
+are not met, a compile error will be generated.
+
+Interfaces and classes are capable of creating even more complex
+structures built around a very loose type definition.  A type
+parameter provided to an interface or class can be used to provide
+type information for any member or function inside of the declaration
+body.
+
+The next example moves the ~ProcessTasks()~ function inside a class
+that will operate as the processor.  A generic interface is created
+that will allow the creation of any number of task processors with
+different implementations of the ~ProcessTask()~ function.  A class
+declaration then provides its own set of type parameters and
+implements the =ITaskProcessor= interface.
+
+#+begin_src js -n
+  interface ITask {
+      Id: number;
+      Execute(): boolean;
+      Error: string;
+  }
+
+  interface ITaskProcessor<T extends ITask> {
+      ProcessTasks(tasks: Array<T>): T;
+      CurrentTask: T;
+  }
+
+  class TaskProcessor<T extends ITask> implements ITaskProcessor<T> {
+      public CurrentTask: T = null;
+      constructor() {}
+      public ProcessTasks(tasks: T[]): T {
+          for (var i = 0; i < tasks.length; i++) {
+              this.CurrentTask = tasks[i];
+              if (this.CurrentTask.Execute() == false) {
+                  return tasks[i];
+              }
+          }
+          this.CurrentTask = null;
+          return null;
+      }
+  }
+#+end_src
+
+Generic functions and types are not limited to a single unknown type.
+Type parameters can be lists of type information that can be used
+anywhere within the declaration block that the list is associated
+with.  Creating a list of type parameters is the same as passing a
+single type parameter, only each type is separated by a comma.
+Furthermore, each generic type created in a parameter list can be used
+as a base type for other type parameters inside of the type’s
+definition:
+
+#+begin_src js -n
+  interface IExample<T, U extends HTMLElement> {
+      Operate<V extends U>(): T;
+  }
+#+end_src
+
 * Type Inference
 #+cindex:type inference
 In this section, we will cover type inference in TypeScript.  Namely,
@@ -4692,7 +5585,7 @@ if ((pet as Fish).swim) {
 
 *** Type Guards using =typeof= and =instanceof=
 
-#+cindex:@code{typeof) type guard
+#+cindex:@code{typeof} type guard
 {{{heading(Typeof Type Guards)}}}
 
 The =typeof= type guards are recognized in two different forms:
@@ -4845,6 +5738,11 @@ function move(pet: Fish | Bird) {
 }
 #+end_src
 * Modules
+#+cindex:ECMAScript 2015
+#+cindex:internal module, namespace
+#+cindex:namespace, internal module
+#+cindex:external module, module
+#+cindex:module, external module
 In order to align with ECMAScript 2015’s terminology, (namely that
 ~module X {~ is equivalent to the now-preferred ~namespace X {~), in
 TypeScript 1.5, the nomenclature has changed:
@@ -4852,7 +5750,168 @@ TypeScript 1.5, the nomenclature has changed:
 - “Internal modules” are now “namespaces”
 - “External modules” are now simply “modules”
 
+* Introduction to Modules
 
+** Internal Module Namespaces
+#+cindex:namespace, internal module
+#+cindex:internal module, namespace
+#+cindex:closure, namespace
+#+cindex:global variable
+Internal modules represent a “namespace” that classes, interfaces,
+enums, variables, code segments, and other namespaces can exist inside
+of.  They are created inside of a closure just like classes are.
+However, modules don’t return a function that gets assigned to a
+global variable.  Rather, modules execute a closure /with/ a global
+variable as a parameter.  Exported properties are then attached /to/
+this global variable.  A module can contain any number of declarations
+of any type of object including other modules.  Each of the
+declarations inside of a module can be either kept isolated or they
+can be exported.  Exported objects will be added to the module’s
+instance.
+
+#+cindex:internal module definition
+#+cindex:namespace definition
+The following is an internal module (“namespace”) definition:
+
+#+begin_src js -n
+  module Shapes {
+      var origin: IPoint = new Point(0, 0);
+      export enum ShapeType {
+          Rectangle = 3,
+          Circle,
+          Line,
+          Freehand
+      }
+      export interface IShape {
+          Type: ShapeType;
+          Bounds: IBounds;
+      }
+      export class Shape implements IShape {
+          public Type: ShapeType = ShapeType.Rectangle;
+          public Bounds: IBounds;
+          constructor() {
+              this.Bounds = new Bounds();
+              this.Bounds.Location = origin;
+          }
+      }
+  }
+#+end_src
+
+The =origin= variable is a private instance of the =Point= class
+created earlier.  Any expression inside the =Shapes= module has access
+to the =origin= variable but since it is not decorated with the
+~export~ keyword, it is limited to within the module.
+
+There is a public interface for an object type that will represent a
+shape of some sort.  There is also also a new public class that
+implements the shape interface and is ready to be drawn on a surface.
+This =Shape= class needs to be accessible outside the =Spaces=
+namespace so it must be exported.
+
+The =ShapeType= enum belongs within the =Shapes= namespace so its
+declaration is included within the module definition as well.
+
+#+cindex:namespace
+#+cindex:internal module
+There is now an internal module (“namespace”) that has two accessible
+named types, the =ShapeType= enum and =Shape= class, and one
+inaccessible variable, the =origin= variable, which is part of the
+isolated state of the module.  While one will not necessarily need
+access to the =ShapeType= enum, it still must be exported for the code
+to compile.
+
+Any named types that are used in the definition of another member
+*must* be made /as accessible as/ that member.  If this requirement is
+not met, compilation will fail.
+
+{{{heading(Accessing Module Members)}}}
+
+Accessing these types is done by providing the module name and then
+the type to access. 
+
+: var shape = new Shapes.Shape();
+: shape.Type = Shapes.ShapeType.Circle;
+
+This code creates a new =Shape= object and sets it type.
+
+{{{heading(Generated JavaScript Module Code)}}}
+
+#+cindex:JavaScript module code
+#+cindex:closure, module
+The generated JavaScript code for the module looks similar to the code
+generated for enum types.  All of the members of the module are
+wrapped in a closure that runs when the module is loaded.  Each of the
+exported types is placed on the instance variable that is passed to
+the closure that is available to anyone accessing the module.  
+
+Modules also share the ability to be merged that enums do.  This means
+that you can separate your code into multiple files and have them
+merged into one object during runtime.  The downside to this
+implementation of modules is that it takes away the ability to create
+interfaces for modules.  However, the ability to organize your code in
+whichever manner you choose is far more valuable than any
+functionality interfaces would bring to modules.
+
+Here is the resuling JavaScript code for the above module definition:
+
+#+begin_src js -n
+  var Shapes;
+  (function (Shapes){
+      var origin = new Point(0, 0);
+      (function (ShapeType) {
+          ShapeType[ShapeType["Rectangle"] = 3] = "Rectangle";
+          ShapeType[ShapeType["Circle"] = 3] = "Circle";
+          ShapeType[ShapeType["Line"] = 3] = "Line";
+          ShapeType[ShapeType["Freehand"] = 3] = "Freehand";
+      })(Shapes.ShapeType || (Shapes.ShapeType = {}));
+      var ShapeType = Shapes.ShapeType;
+      var Shape = (function() {
+          function Shape() {
+              this.Type = 3 /* Rectangle */;
+              this.Bounds = new Bounds();
+              this.Bounds.Location = origin;
+          }
+          return Shape;
+      })();
+  })(Shapes || (Shapes = {}));
+#+end_src
+
+** Creating Module Namespaces
+There are two ways to provide module namespaces in TypeScript.  One
+way is to nest the modules inside of each other.  The other way is to
+define them as part of the module declaration.
+
+#+begin_src js -n
+  module Animals {
+      /* nesting modules inside of each other */
+      export module Reptiles {
+          export var snake = "snake";
+      }
+  }
+
+  module.Animals.Mammels {
+      /* defining modules as part of the module declaration */
+      export var monkey = "monkey";
+  }
+#+end_src
+
+Both of the module declarations shown above are valid and the
+JavaScript output from both declarations is exactly the same.  Which
+style you choose is a matter of preference.  The compiler will treat
+them as equivalent.  Further, the means of accessing the namespaces is
+identical.
+
+** Module Imports
+TypeScript provides a keyword opposite to the ~export~ keyword that
+allows you to create an alias to members of another module.  The
+~import~ keyword creates a new local reference to exported types from
+other modules.
+
+: import Bounds = Drawing.Bounds
+
+The alias can be used as both a type annotation and as its object type.
+
+* Module Details
 #+cindex:ECMAScript 2015
 Starting with ECMAScript 2015, JavaScript has a concept of
 modules.  TypeScript shares this concept.
@@ -5428,9 +6487,11 @@ Format options can be specified in multiple ways.
 :PROPERTIES:
 :appendix: t
 :END:
-#+name:makefile
-#+begin_src makefile -n :tangle makefile
+#+caption:Makefile
+#+name:Makefile
+#+begin_src makefile -n :tangle Makefile
 SOURCE=TypeScript-Guide
+DIRS = examples
 
 info:	$(SOURCE).texi
 	makeinfo $(SOURCE).texi
@@ -5439,6 +6500,8 @@ pdf:	$(SOURCE).texi
 	pdftexi2dvi -q $(SOURCE).texi; \
 	open $(SOURCE).pdf
 
+clean-dirs:
+	rm -rf $(DIRS)
 clean-texi:
 	-rm *.texi
 clean-info:
@@ -5448,7 +6511,7 @@ clean-pdf:
 clean-aux:
 	-rm *.{aux,toc,log,cp,cps,pg,pgs,fn,fns}
 
-clean: clean-texi clean-info clean-pdf clean-aux
+clean: clean-texi clean-info clean-pdf clean-aux clean-dirs
 
 phony:clean-texi clean-info clean-pdf clean-aux clean
 #+end_src
@@ -5505,6 +6568,11 @@ Copyright {{{noindent}}}\copy 2019 {{{author}}} {{{theVersion}}}
 #+texinfo_printed_title:TypeScript Guide in Print
 
 * Local Variables                                                  :noexport:
+
+* Footnotes
+
+[fn:1]~@types/node~ is necessary for the ~require~ keyword and the
+~exports~ object variable. 
 # Local Variables:
 # time-stamp-pattern:"8/^\\#\\+date:%:y-%02m-%02d %02H:%02M$"
 # End:
