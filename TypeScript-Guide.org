@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-21 19:08
-#+macro:version 0.0.43
+#+date:2019-11-21 20:59
+#+macro:version 0.0.44
 
 #+texinfo:@insertcopying
 
@@ -5294,11 +5294,15 @@ Second, the Typescript compiler doesn’t allow spreads of type
 parameters from generic functions.  That feature is expected in future
 versions of the language.
 * Generics
+** Type Parameters
+#+cindex:type parameters
 Generics define the third category of objects in TypeScript: type
 parameters.  Type parameters are defined inside of =<...>=.  They can
 be used on interfaces or class definitions to create functionality for
 a broad set of object types that may or may not be known at the time
 of development.
+
+{{{heading(Generic Task Processor)}}}
 
 Let’s create a generic task processor.  Assume the simplest possible
 implementation, a sequential process that passes a list of generic
@@ -5341,6 +5345,8 @@ parameter provided to an interface or class can be used to provide
 type information for any member or function inside of the declaration
 body.
 
+{{{heading(A More Complex Task Processor)}}}
+
 The next example moves the ~ProcessTasks()~ function inside a class
 that will operate as the processor.  A generic interface is created
 that will allow the creation of any number of task processors with
@@ -5376,6 +5382,8 @@ implements the =ITaskProcessor= interface.
   }
 #+end_src
 
+{{{heading(Lists of Type Parameters)}}}
+
 Generic functions and types are not limited to a single unknown type.
 Type parameters can be lists of type information that can be used
 anywhere within the declaration block that the list is associated
@@ -5391,6 +5399,63 @@ definition:
   }
 #+end_src
 
+** Simple Generics---Identify Function
+#+cindex:identity function
+The identity function is a function that will return back whatever is
+passed in. You can think of this in a similar way to the echo command.
+Without generics, we would either have to give the identity function a
+specific type, or we could describe the identity function using the
+any type:
+
+#+BEGIN_SRC js -n
+  function identity(arg: number): number {
+      return arg;
+  }
+
+  function identity(arg: any): any {
+      return arg;
+  }
+#+END_SRC
+
+While using =any= is certainly generic in that it will cause the
+function to accept any and all types for the type of arg, we actually
+are losing the information about what that type was when the function
+returns.  If we passed in a number, the only information we have is
+that any type could be returned.
+
+#+cindex:type variable
+Instead, we need a way of capturing the type of the argument in such a
+way that we can also use it to denote what is being returned.  Here,
+we will use a /type variable/, a special kind of variable that works
+on types rather than values.
+
+#+BEGIN_SRC js -n
+function identity<T>(arg: T): T {
+    return arg;
+}
+#+END_SRC
+
+We’ve now added a /type variable/ =T= to the identity function.  This
+=T= allows us to capture the type the user provides (e.g. =number=),
+so that we can use that information later.  Here, we use =T= again as
+the return type.  On inspection, we can now see the same type is used
+for the argument and the return type.  This allows us to traffic that
+type information in one side of the function and out the other.
+
+We say that this version of the identity function is generic, as it
+works over a range of types.  Unlike using =any=, it’s also just as
+precise (ie, it doesn’t lose any information) as the first identity
+function that used numbers for the argument and return type.
+
+Once we’ve written the generic identity function, we can call it in
+one of two ways.  The first way is to pass all of the arguments,
+including the type argument, to the function:
+
+: let output = identity<string>("myString");  // type of output will be 'string'
+
+Here we explicitly set =T= to be string as one of the arguments to the
+function call, denoted using the =< >= around the arguments rather
+than =( )=.
 * Type Inference
 #+cindex:type inference
 In this section, we will cover type inference in TypeScript.  Namely,
