@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-22 02:20
-#+macro:version 0.0.45
+#+date:2019-11-22 09:36
+#+macro:version 0.0.46
 
 #+texinfo:@insertcopying
 
@@ -1257,32 +1257,78 @@ output. In ~gulp~, the plugins are automatically pipe-lined
 *** Jspm
 - [[https://github.com/Microsoft/TypeScriptSamples/tree/master/jspm][jspm]]
 *** Webpack
+Webpack's main purpose is to /bundle/, but it can do many sequential
+steps, such as compiling TypeScript.  Webpack has two loaders for
+TypeScript:
+
 - [[https://www.npmjs.com/package/ts-loader][ts-loader]] :: TypeScript loader for webpack
 
-{{{heading(Install ts-loader)}}}
+- [[https://www.npmjs.com/package/awesome-typescript-loader][awesome-typescript-loader]] :: TypeScript loader for webpack
 
-: npm install ts-loader --save-dev
+
+{{{heading(Install Webpack)}}}
+
+: yarn add --dev webpack wepback-cli
+
+{{{heading(Install typescript and ts-loader)}}}
+
+: yarn add --dev typescript ts-loader
 
 {{{heading(Basic webpack.config.js when using Webpack 2)}}}
 
+Once the tools are installed, configure Webpack to bundle the
+JavaScript produced by the ~webpack~ TypeScript loader.
+~webpack.config.js~ is needed at the root of your project, and the
+=entry= property must be defined.  This property must point to the
+TypeScript file.  The output is specified by the =output= property.
+Webpack requires that you specify the extension to be analyzed under
+the properties =resolve:extensions=.  For TypeScript, this would be
+~.ts~, but if you are working with React you would also add ~.tsx~.
+Lastly, specify ~ts-loader~ under the property =module:rules=.
+
+- entry
+- output
+  - path
+  - filename
+- resolve
+  - extensions
+- module
+  - rules
+
+#+caption:Sample webpack.config.js File
+#+name:sample-webpack-config-js
 #+begin_src js
-module.exports = {
-    entry: "./src/index.tsx",
-    output: {
-        path: '/',
-        filename: "bundle.js"
-    },
-    resolve: {
-        extensions: [".tsx", ".ts", ".js", ".json"]
-    },
-    module: {
-        rules: [
-            // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
-            { test: /\.tsx?$/, use: ["ts-loader"], exclude: /node_modules/ }
-        ]
-    }
-}
+  module.exports = {
+      entry: "./src/index.ts",
+      output: {
+          path: './dist',
+          filename: "bundle.js"
+      },
+      resolve: {
+          extensions: [".ts", ".tsx", ".js", ".json"]
+      },
+      module: {
+          rules: [
+              // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
+              { test: /\.tsx?$/,
+                use: ["ts-loader"],
+                exclude: /node_modules/
+              }
+          ]
+      }
+  }
 #+end_src
+
+Webpack can be run using the command-line tool ~cli.js~ using the
+~webpack-cli~ tool in ~node_modules/.bin~:
+
+: yarn webpack-cli
+
+Alternatively, you can add a =build= script to ~package.json~ that
+will run the ~webpack-cli~ tool:
+
+: "scripts": { "build": "wepback"}
+
 ** An Example
 In your editor, type the following JavaScript code in ~greeter.ts~:
 
