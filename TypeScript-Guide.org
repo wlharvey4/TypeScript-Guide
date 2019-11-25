@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-24 22:37
-#+macro:version 0.0.49
+#+date:2019-11-25 10:47
+#+macro:version 0.0.50
 
 #+texinfo:@insertcopying
 
@@ -2639,7 +2639,6 @@ statement.
 If you are following an object-oriented approach, you might not get
 much mileage from this feature, but it is a common use case for
 functional programming.
-
 * Operators
 All the standard JavaScript operators are available within your
 TypeScript program.  This section describes operators that have
@@ -2924,6 +2923,14 @@ function addToZ(x, y) {
 #+end_src
 
 ** What TypeScript Adds to Functions
+
+- type annotations
+- optional parameters
+- default parameters
+- rest parameters
+- overloads
+
+
 #+cindex:function type annotations
 #+cindex:@code{rest} parameters
 Typescript has added type annotations to the parameter list as well as
@@ -3245,6 +3252,26 @@ function buildName(firstName: string, ...restOfName: string[]) {
 let buildNameFun: (fname: string, ...rest: string[]) => string = buildName;
 #+end_src
 
+{{{heading(Rest Parameter Rules)}}}
+
+Rest parameters allow calling code to specify zero or more arguments
+of the specified type.  For the arguments to be correctly passed, rest
+parameters must follow these rules:
+
+- Only one rest parameter is allowed.
+
+- The rest parameter must appear last in the parameter list.
+
+- The type of a rest parameter must be an array type.
+
+
+To declare a rest parameter, prefix the identifier with three periods
+and ensure that the type annotation is an array type.  Your function
+should expect to receive any number of arguments, including none.  if
+you require that at least one argument is passed, you would need to
+add a required parameter before the rest parameter to enforce this
+minimum requirement.
+
 ** this in Function Declarations
 TypeScript lets you catch incorrect uses of this with a couple of
 techniques.
@@ -3478,8 +3505,30 @@ describe this to the type system?
 #+cindex:overload list
 The answer is to supply multiple function types for the same function
 as a list of overloads.  This list is what the compiler will use to
-resolve function calls.  Let’s create a list of overloads that
-describe what our ~pickCard~ accepts and what it returns.
+resolve function calls.
+
+#+cindex:implementation signature
+In many languages, each overload has its own implementation but in
+TypeScript the overloads all decorate a single implementation.  The
+actual signature of the function appears last and is hidden by the
+overloads.  The final signature is called an /implementation
+signature/.  The implementation signature must define parameters and a
+return value that are compatible with all preceding signatures.  As
+this implies, the return types for each overload can be different and
+the parameter lists can differ not only in types, but also in number
+of arguments. If an overload specifies fewer parameters than the
+implementation signature, the implementation signature would have to
+make the extra parameters optional, default, or rest parameters.
+
+When you call a function that has overloads defined, the compiler
+constructs a list of signatures and attempts to determine the
+signature that matches the function call.  If there are no matching
+signatures, the call results in an error.  If one or more signature
+matches, the earliest of the matching signatures (in the order they
+appear in the file) determines the return type.
+
+Let’s create a list of overloads that describe what our ~pickCard~
+accepts and what it returns.
 
 #+begin_src js
 let suits = ["hearts", "spades", "clubs", "diamonds"];
@@ -3522,6 +3571,200 @@ Note that the function ~pickCard(x): any~ piece is not part of the
 overload list, so it only has two overloads: one that takes an object
 and one that takes a number.  Calling ~pickCard~ with any other
 parameter types would cause an error.
+
+{{{heading(Use Other Languages Features First Before Overloads)}}}
+
+In most cases you can write a method using other TypeScript language
+features such as optional, default, and rest parameter and avoid
+writing an overload.  Where this isn’t possible, you should consider
+writing separate, well-named functions that make their different
+intentions explicit.  That isn’t to say that there are no valid uses
+for function overloads and if you have considered the other options
+and chosen to use overloads that is a perfectly reasonable selection.
+
+*** Specialized Overload Signatures
+Specialized overload signatures refer to the ability in TypeScript to
+create overloads based on string constants.  Rather than the overloads
+being based on different parameters, they are based on the string
+value of an argument.  This allows a single implementation of a
+function to be reused in many cases without requiring the calling code
+to convert the types.
+
+There are some rules to follow when using specialized overload
+signatures:
+
+- There must be at least one nonspecialized signature.
+
+- Each specialized signature must return a subtype of a nonspecialized
+  signature.
+
+- The implementation signature must be compatible with all signatures.
+
+
+The most common case for specialized signatures is that the
+nonspecialized signature returns a superclass, with each overload
+returning a more specialized subclass that inherits (or is
+structurally compatible with) the superclass.
+
+#+begin_src js -n
+  class HandlerFactory {
+  getHandler(type: 'Random'): RandomHandler;
+  getHandler(type: 'Reversed'): ReversedHandler;
+      getHandler(type: string): Handler; // non-specialized signature
+      getHandler(type: string): Handler { // implementation signature
+          switch (type) {
+              case 'Random':
+                  return new RandomHandler();
+              case 'Reversed':
+                  return new ReversedHandler();
+              default:
+          }
+      }
+  }
+#+end_src
+
+When you write signatures that satisfy these rules, you may find that
+your implementation signature is identical to your nonspecialized
+signature.  Remember that the implementation signature is hidden from
+calling code, so although it looks like duplication, it is necessary.
+
+This is how the classic definition for the Document Object Model (DOM)
+method getElementsByTagName was declared in the early versions of the
+TypeScript standard library, which means you get back an appropriately
+typed NodeList depending on the HTML tag name you pass to the
+function.
+
+#+caption:getElementsByTagName
+#+name:getElementsByTagName-example
+#+begin_src js -n
+  // This example does not list all variations...
+  getElementsByTagName(name: "a"): NodeListOf<HTMLAnchorElement>;
+  getElementsByTagName(name: "blockquote"): NodeListOf<HTMLQuoteElement>;
+  getElementsByTagName(name: "body"): NodeListOf<HTMLBodyElement>;
+  getElementsByTagName(name: "button"): NodeListOf<HTMLButtonElement>;
+  getElementsByTagName(name: "form"): NodeListOf<HTMLFormElement>;
+  getElementsByTagName(name: "h1"): NodeListOf<HTMLHeadingElement>;
+  getElementsByTagName(name: string): NodeList; // Non-specialized signature
+  getElementsByTagName(name: string): NodeList { // implementation signature
+      return document.getElementsByTagName(name);
+  }
+#+end_src
+
+The above shows how specialized subclasses are annotated as the return
+type where a specific value is passed in the type parameter.  This is
+an unusual technique, but is necessary for the purposes of defining
+the behavior you would expect from web browsers.  The specialized
+overloads inspect the value being passed and select the overload based
+on that value, for example, if you pass a name argument with the value
+"blockquote", the second signature above will be matched and the
+return type is =NodeListOf<HTMLQuoteElement>=.
+
+*** Arrow Functions
+
+TypeScript provides shorthand syntax for defining a function.  The
+arrow function is inspired by additions to the ECMAScript standard.
+Arrow functions allow you to leave out the function keyword and define
+your functions in an ultracompact way.  When you target ECMAScript 3
+or 5, the arrow functions result in identical JavaScript functions in
+the output.
+
+#+begin_src js -n
+  const shortAddNumbers = (a: number, b: number) => a + b;
+
+  const mediumAddNumbers = (a: number, b: number) => {
+      return a + b;
+  }
+
+  const longAddNumbers = function (a: number, b: number) {
+      return a + b;
+  }
+#+end_src
+
+{{{heading(Preserving this Scope Using Arrow Functions)}}}
+
+You can also use an arrow syntax to preserve the lexical scope of the
+this keyword.  This is particularly useful when working with
+callbacks, promises, or events as these represent situations where you
+are likely to lose the current scope.
+
+#+begin_src js -n
+  const scopePreservingExample = {
+      text: "Property from lexical scope",
+      run: function () {
+          setTimeout(() => {
+              alert(this.text);
+          }, 1000);
+      }
+  };
+  // alerts "Property from lexical scope"
+  scopePreservingExample.run();
+#+end_src
+
+Behind the scenes, the TypeScript compiler creates a variable named
+~_this~ just before the arrow function is defined and sets its value
+to the current value of ~this~.  It also substitutes any usages of
+~this~ within the function with the newly introduced ~_this~ variable,
+so the statement now reads ~_this.text~ in the JavaScript output.  The
+use of the ~_this~ variable inside the function creates a closure
+around the variable, which preserves its context along with the
+function.
+
+*** Function Currying
+
+/Currying/ is a process whereby a function with multiple parameters is
+decomposed into multiple functions that each take a single parameter.
+The resulting chain of functions can be called in stages, with the
+partly applied stage becoming a reusable implementation of the
+combined function and value.
+
+You can use arrow functions for function currying.
+
+#+begin_src js -n
+  // Currying
+  const multiply = (a: number) => (b: number) => a * b;
+
+  // Pass both arguments in sequence: 30
+  const numA = multiply(5)(6);
+
+  // Pass just the first argument and re-use
+  const orderOfMagnitude = multiply(10);
+
+  // 10
+  const deca = orderOfMagnitude(1);
+
+  // 100
+  const hecta = orderOfMagnitude(deca);
+
+  // 1,000
+  const kilo = orderOfMagnitude(hecta);
+#+end_src
+
+The first function takes a single parameter named ~a~, and returns
+another function that has captured the value of the original argument.
+The function that is returned accepts a single parameter named ~b~,
+and when called returns the product of ~a~ and ~b~.  You can hold onto
+the result of the first function call and use it many times, which is
+one of the key points of currying.
+
+Here is a practical example.  Instead of repeating the first argument
+of a logging function, it can be specified a single time and applied
+each time the logging function is called. This reduces repetition and
+improves readability.
+
+#+caption:Custom Logging Using Currying
+#+name:custom-logging-using-currying
+#+begin_src js -n
+  const log = (source: string) => (message: string) => console.log(source, message);
+
+  const customLog = log('Custom Log:');
+
+  // Custom Log: Message One
+  customLog('Message One');
+
+  // Custom Log: Message Two
+  customLog('Message Two');
+#+end_src
+
 * Interfaces
 Interfaces are a way of representing complex types about any object.
 They have absolutely no runtime consequences because JavaScript does
