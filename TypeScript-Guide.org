@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-24 19:06
-#+macro:version 0.0.47
+#+date:2019-11-24 21:12
+#+macro:version 0.0.48
 
 #+texinfo:@insertcopying
 
@@ -2299,6 +2299,346 @@ set. You can opt to specify values for all identifiers if you wish to.
   const typeName = VehicleType[type]; // 'Lorry'
 #+END_SRC
 
+*** Enumerations and Bit Flags
+You can use an enumeration to define bit flags.  Bit flags allow a
+series of items to be selected or deselected by switching individual
+bits in a sequence on and off.  To ensure that each value in an
+enumeration relates to a single bit, the numbering must follow the
+binary sequence whereby each value is a power of two:
+
+: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1,024, 2,048, 4,096, and so on
+
+[[enumerations-and-big-flags][Bit Flags]] for an example of using an enumeration for bit flags. By
+default, when you create a variable to store the state, all items are
+switched off.  To switch on an option, it can simply be assigned to
+the variable.  To switch on multiple items, items can be combined with
+the bitwise OR operator (|).  Items remain switched on if you happen
+to include them multiple times using the bitwise OR operator.
+
+#+caption:Enumeration and Big Flags
+#+name:enumerations-and-big-flags
+#+begin_src js -n
+  enum DiscFlags {
+      None = 0,
+      Drive = 1,
+      Influence = 2,
+      Steadiness = 4,
+      Conscientiousness = 8
+  }
+  // Using flags
+  var personality = DiscFlags.Drive | DiscFlags.Conscientiousness;
+  // Testing flags
+  // true
+  var hasD = (personality & DiscFlags.Drive) == DiscFlags.Drive;
+  // false
+  var hasI = (personality & DiscFlags.Influence) == DiscFlags.Influence;
+  // false
+  var hasS = (personality & DiscFlags.Steadiness) == DiscFlags.Steadiness;
+  // true
+  var hasC = (personality & DiscFlags.Conscientiousness) == DiscFlags.Conscientiousness;
+#+end_src
+
+*** Enumeration Values
+The value assigned to each item in an enum can be constant, or
+computed.
+
+Constant values are any expression that can be interpreted by the type
+system, such as literal values, calculations, and binary operators.
+
+Computed values are expressions that could not be efficiently
+interpreted by the compiler, such as assigning a string length, or
+calling out to a method.
+
+The terminology here is dangerously overloaded; the term “constant”
+when considering “constant vs computed” should not be confused with
+the ~const~ keyword, which can be used with variables and with a
+special kind of enumeration, called a /constant enumeration/.
+
+*** Constant Enumeration
+A constant enumeration can be created using the ~const~ keyword.
+Unlike a normal enumeration, a constant enumeration is erased during
+compilation and all code referring to it is replaced with hard-coded
+values.
+
+#+begin_src js -n
+  const enum VehicleType {
+      PedalCycle,
+      MotorCycle,
+      Car,
+      Van,
+      Bus,
+      Lorry
+  }
+
+  const type = VehicleType.Lorry; // var type = 5 /* Lorry */;
+#+end_src
+
+** Union Types
+#+cindex:union type
+A union type widens the allowable values by specifying that the value
+can be of more than a single type.  Libraries such as jQuery commonly
+expose functions that allow you to pass either a jQuery object, or a
+string selector, for example; and union types allow you to limit the
+possible values to just these two types (rather than resorting to a
+completely dynamic type).  It is possible to create a type that is
+either a Boolean or a number.
+
+Union types use the pipe-delimeter to separate each of the possible
+types, which you can read as an “OR.”  Attempting to supply a value
+that doesn’t match one of the types in the union results in an error.
+
+#+begin_src js -n
+  // Type annotation for a union type
+  let union: boolean | number; // OK: number
+  union = 5;
+  // OK: boolean
+  union = true;
+  // Error: Type "string" is not assignable to type 'number | boolean'
+  union = 'string';
+  // Type alias for a union type
+  type StringOrError = string | Error;
+  // Type alias for union of many types
+  type SeriesOfTypes = string | number | boolean | Error;
+#+end_src
+
+#+cindex:type alias
+When creating a union type, consider using a /type alias/ to reduce
+the repetition of the definition in your program and to give the
+concept a name. A union can be created using any types available in
+your program, not just primitive types.
+
+** Literal Types
+Literal types can be used to narrow the range of allowable values to a
+subset of the type, such as reducing a string, to a set of specific
+values.  Literal types are really just union types made up of specific
+values, so you can also create a number literal type, or a
+union/literal hybrid type using the same syntax.
+
+#+begin_src js -n
+  type Kingdom = 'Bacteria' | 'Protozoa' | 'Chromista' | 'Plantae' | 'Fungi' | 'Animalia';
+  let kingdom: Kingdom;
+  // OK
+  kingdom = 'Bacteria';
+  // Error: Type 'Protista' is not assignable to type 'Kingdom'
+  kingdom = 'Protista';
+
+  // Number literal type
+  type Fibonacci = 1 | 2 | 3 | 5 | 8 | 13; let num: Fibonacci;
+  // OK num = 8;
+  // Error: Type '9' is not assignable to type 'Fibonacci'
+  num = 9;
+  // Hybrid union/literal type
+  type Randoms = 'Text' | 10 | false;
+  let random: Randoms;
+  // OK
+  random = 'Text';
+  random = 10;
+  random = false;
+  // Error: Not assignable.
+  random = 'Other String';
+  random = 12;
+  random = true;
+#+end_src
+
+** Intersection Types
+#+cindex:intersection type
+#+cindex:mixin
+An intersection type combines several different types into a single
+supertype that includes the members from all participating types.
+Where a union type is “either type A or B,” an intersection type is
+“both type A and B.”  Intersection types are useful for working with
+mixins.
+
+Below are two interfaces for =Skier= and =Shooter=, which are combined
+into the =Biathelete= intersection type.  Intersection types use the
+ampersand character, which you can read as “AND.”
+
+#+begin_src js -n
+interface Skier {
+    slide(): void;
+}
+interface Shooter {
+    shoot(): void;
+}
+type Biathelete = Skier & Shooter;
+#+end_src
+
+** Array Types
+#+cindex:array types
+TypeScript arrays have precise typing for their contents.  To specify
+an array type, you simply add square brackets after the type name.
+This works for all types whether they are primitive or custom types.
+When you add an item to the array, its type will be checked to ensure
+it is compatible.  When you access elements in the array, you will get
+quality autocompletion because the type of each item is known.
+
+#+begin_src js -n
+  interface Monument {
+      name: string;
+      heightInMeters: number;
+  }
+
+  // The array is typed using the Monument interface
+  const monuments: Monument[] = []; // or Array<Monument>
+
+  // Each item added to the array is checked for type compatibility
+  monuments.push({
+      name: 'Statue of Liberty',
+      heightInMeters: 46
+  });
+#+end_src
+
+** Tuple Types
+A tuple type uses an array, and specifies the type of elements based
+on their position.
+
+#+begin_src js -n
+  let poem: [number , boolean , string];
+  // OK
+  poem = [1, true, 'love'];
+
+  // Error: 'string' is not assignable to 'number'
+  poem = ['my', true, 'love'];
+#+end_src
+
+** Dictionary Types
+You can represent dictionaries in TypeScript using an index type.  The
+index type specifies the key and its type in square brackets, and the
+type of the value afterwards as a type annotation.
+
+#+begin_src js -n
+  interface Cephalopod {
+      hasInk: boolean;
+      arms: number;
+      tentacles: number;
+  }
+
+  interface CephalopodDictionary {
+      [index: string]: Cephalopod;
+  }
+
+  let dictionary: CephalopodDictionary = {};
+
+  dictionary['octopus vulgaris'] = { hasInk: true, arms: 8, tentacles: 0 };
+  dictionary['loligo vulgaris'] = { hasInk: true, arms: 8, tentacles: 2 };
+
+  // Error. Not assignable to type 'Cephalopod'
+  dictionary[0] = { hasInk: true };
+#+end_src
+
+** Mapped Types
+To reduce the amount of effort required to create similar types that
+differ only in optionality, or readability, mapped types allow you to
+create variations of an existing type in a single expression.  Mapped
+types use the keyof keyword, which is an index type query that gathers
+a list of permitted property names for a type in your program.
+
+#+begin_src js -n
+  interface Options {
+      material: string;
+      backlight: boolean;
+  }
+
+  // Mapped types
+  type ReadOnly<T> = { readonly [k in keyof T]: T[k]; }
+  type Optional<T> = {[k in keyof T]?: T[k]; }
+  type Nullable<T> = {[k in keyof T]: T[k] | null; }
+
+  // Creating new types from mapped types
+  type ReadonlyOptions = Readonly<Options>;
+  type OptionalOptions = Optional<Options>;
+  type NullableOptions = Nullable<Options>;
+#+end_src
+
+** Type Assertions
+In cases in which TypeScript determines that an assignment is invalid,
+but you know that you are dealing with a special case, you can
+override the type using a type assertion.  When you use a type
+assertion, you are taking responsibility from the compiler and must
+ensure that the assignment is valid.  The type assertion precedes a
+statement.
+
+: (<type_assertion>property).member
+
+Although a type assertion overrides the type as far as the compiler is
+concerned, there are still checks performed when you assert a type. It
+is possible to force a type assertion by adding an additional <any>
+type assertion between the actual type you want to use and the
+identifier of the variable.
+
+: <type_assertion><any>member
+
+** Type Guards
+When dealing with a wide type definition, you may find you need to
+narrow it in order to use a member that would otherwise be
+unavailable.  A type guard is a statement that results in the type
+becoming narrower.  The standard type guards include ~typeof~ and
+~instanceof~; but if that doesn’t cover your situation, you can write
+your own custom type guard.
+
+: typeof stringNumber === 'string'
+: treadmill is SpeedControllable
+
+** Discriminated Unions
+A discriminated union, or tagged union, allows you to combine union
+types, type aliases, and type guards to get full autocompletion and
+checking for types with a common string literal property.  The
+components that make up a discriminated union are the following:
+
+1. Several types that share a common string literal property, called a
+   /discriminant/.
+
+2. A type alias for a union of these types, called a union.
+
+3. A type guard that checks the discriminant.
+
+
+The =cube= and =cuboid= types both share the discriminant “kind.”  The
+types are added to the =prism= union, which results in full
+autocompletion in the ~switch~ statement in the ~volume~ function.
+The ~switch~ statement acts as a type guard, meaning the type of
+=prism= in each case is the correct narrowed type.  The default case
+is used like a safety net to ensure there are no types that are part
+of the discriminated union that have been left out of the ~switch~
+statement.
+
+#+begin_src js -n
+  nterface Cube {
+      kind: 'cube'; // Discriminant
+      size: number;
+  }
+
+  interface Cuboid {
+      kind: 'cuboid'; // Discriminant
+      width: number;
+      depth: number;
+      height: number;
+  }
+
+  // Union
+  type Prism = Cube | Cuboid;
+
+  function volume(prism: Prism): number {
+      // Type Guard
+      switch (prism.kind) {
+          case 'cube':
+              return prism.size * prism.size * prism.size;
+          case 'cuboid':
+              return prism.width * prism.depth * prism.height;
+          default:
+              assertNever(prism);
+          break;
+      }
+  }
+
+  function assertNever(arg: never): never {
+      throw new Error("Possible new tagged type: " + arg);
+  }
+#+end_src
+
+If you are following an object-oriented approach, you might not get
+much mileage from this feature, but it is a common use case for
+functional programming.
 * Functions
 #+cindex:functions
 In TypeScript, while there are classes, namespaces, and modules,
