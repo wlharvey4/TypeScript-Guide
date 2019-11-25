@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-22 09:36
-#+macro:version 0.0.46
+#+date:2019-11-24 19:06
+#+macro:version 0.0.47
 
 #+texinfo:@insertcopying
 
@@ -2150,6 +2150,155 @@ The behavior of literal types is similar to the behavior of
 enumerations, so if you are using only numbers in your literal type,
 consider whether an enumeration would be more expressive in your
 program.
+* Types---An Introduction
+#+cindex:static typing
+TypeScript is optionally statically typed.  It is possible to opt out
+of this by declaring dynamic variables.  You can also create types to
+replace primitive types.  Static typing allows development tools to
+provide intelligent autocompletion.
+
+** Type Annotations
+#+cindex:type annotation
+The TypeScript language service is expert at inferring types
+automatically.  However, there are times when it can’t fathom your
+intentions.  There will also be times where you will wish to make a
+type explicit for safety or to narrow the type.  In these cases, you
+can use a /type annotation/ to specify the type.
+
+The type used to specify an annotation can be a primitive type, an
+array type, a function signature, a type alias, or any complex
+structure you want to represent including the names of classes and
+interfaces you create.  You can also be permissive by allowing one of
+multiple types (union types), or more restrictive by limiting the
+range of allowable values (literal types).  If you want to opt out of
+static type checking, you can use the special any type, which marks a
+variable’s type as dynamic.  No checks are made on dynamic types.
+
+{{{heading(Example of Type Annotations)}}}
+
+{{{subheading(Variable Type Annotations)}}}
+
+For a variable, the type annotation comes after the identifier and is
+preceded by a colon.
+
+: const variable : type ;
+: const variable : type = value ;
+
+{{{subheading(Array Type Annotation)}}}
+
+: const names : string[] ;
+
+{{{subheading(Function Type Annotation)}}}
+
+: let sayHello : (name: string) => string ;
+
+{{{subheading(Object Type Annotation)}}}
+
+: let person : { name : string; heightinCentimeters : number; }
+
+{{{heading(Interfaces and Type Aliases)}}}
+
+#+cindex:interface
+#+cindex:@code{extends} clause
+#+cindex:@code{implements} clause
+#+cindex:generic interface
+#+cindex:type argument
+#+cindex:type alias
+If a type annotation becomes too complex, you can create an interface,
+or a type alias to represent the type to simplify annotations.  An
+interface can be used in an ~extends~ or ~implements~ clause, which
+means you can explicitly use them when defining other interfaces and
+classes.  An interface can also accept type arguments, making the
+interface generic.  A type alias can do neither of these.
+
+#+BEGIN_SRC js -n
+  // Interface
+  interface PersonInterface {
+      name : string;
+      heightInCentimeters;
+  }
+
+  // Type Alias
+  type PersonType = {
+      name : string;
+      heightInCentimeters;
+  };
+#+END_SRC
+
+** Primitive Types
+#+cindex:primitive types
+The primitive types in TypeScript are incredibly basic, but through
+the tools of the type system you can combine them, widen them, and
+narrow them to represent the concepts in your program.  These types
+directly represent the underlying JavaScript types and follow the
+standards set for those types:
+
+- ~string~ :: a sequence of UTF-16 code units
+
+- ~boolean~ :: =true= or =false=
+
+- ~number~ :: a double-precision 64-bit floating point value; there
+              are no special types to represent integers or other
+              specific variations on the numeric type as it wouldn’t
+              be practical to perform static analysis to ensure all
+              possible values assigned are valid.
+
+- ~symbol~ :: a unique, immutable symbol, substitutable for a string
+              as an object key
+
+- ~undefined~ :: the value of a variable that has not been assigned a
+                 value.
+
+- ~null~ :: can be used to represent an intentional absence of an
+            object value.
+
+- ~void~ :: used to represent cases where there is no value, for
+            example, to show that a function doesn’t return anything.
+
+- ~never~ :: represents an unreachable section of code, for example a
+             function that throws an exception has the return type of
+             never.
+
+** Object and Dynamic Types
+#+cindex:object types
+#+cindex:dynamic types
+Everything that isn’t a primitive type in TypeScript is a subclass of
+the =object= type.
+
+#+cindex:@code{any} type
+#+cindex:implicit @code{any} type
+The final types is the dynamic =any= type, which can be used to
+represent literally any type.  When using dynamic types, there is no
+compiler type checking for the type.
+
+The implicit =any= type is also used by the compiler in situations
+where it cannot infer the type automatically.  You can disallow these
+implicit =any= types using a complier flag.  You can also use it in
+cases where you don’t want the type to be checked by the compiler,
+which gives you access to all of the dynamic features of the
+JavaScript language.
+
+** Enumerations
+Enumerations are one of the simplest /narrowing/ types.  Enumerations
+represent a collection of named elements that you can use to avoid
+littering your program with hard-coded values.  By default,
+enumerations are zero based although you can change this by specifying
+the first value, in which case numbers will increment from value you
+set. You can opt to specify values for all identifiers if you wish to.
+
+#+BEGIN_SRC js -n
+  enum VehicleType {
+      PedalCycle,
+      MotorCycle,
+      Car,
+      Van,
+      Bus,
+  Lorry }
+
+  const type = VehicleType.Lorry
+  const typeName = VehicleType[type]; // 'Lorry'
+#+END_SRC
+
 * Functions
 #+cindex:functions
 In TypeScript, while there are classes, namespaces, and modules,
