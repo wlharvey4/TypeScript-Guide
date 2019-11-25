@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-25 10:47
-#+macro:version 0.0.50
+#+date:2019-11-25 11:28
+#+macro:version 0.0.51
 
 #+texinfo:@insertcopying
 
@@ -4358,6 +4358,41 @@ const Clock: ClockConstructor = class Clock implements ClockInterface {
       console.log("beep beep");
   }
 }
+#+end_src
+
+** Hybrid Types
+You can also describe hybrid types with an interface, such as a
+function/object hybrid type.  
+
+#+caption:Hybrid Type
+#+name:hybrid-type
+#+begin_src js -n
+  // Hybrid type
+  interface SimpleDocument {
+      (selector: string): HTMLElement;
+      notify(message: string): void;
+  }
+
+  // Implementation
+  const prepareDocument = function (): SimpleDocument {
+      let doc = <SimpleDocument>function (selector: string) {
+          return document.getElementById(selector);
+      };
+
+      doc.notify = function (message: string) {
+          alert(message);
+      }
+
+      return doc;
+  }
+
+  const $ = prepareDocument();
+
+  // Call $ as a function
+  const elem = $('myId');
+
+  // Use $ as an object
+  $.notify(elem.id);
 #+end_src
 
 ** Extending Interfaces
