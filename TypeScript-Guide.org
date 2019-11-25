@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-25 11:28
-#+macro:version 0.0.51
+#+date:2019-11-25 12:00
+#+macro:version 0.0.52
 
 #+texinfo:@insertcopying
 
@@ -4531,237 +4531,174 @@ classes are not.
 Classes consist of a variety of different properties and members.
 These members can be either public or private, and static or instance.
 
-** Creating Classes
-   #+cindex:classes
-   Creating classes in Typescript is essentially the same as creating
-   interfaces.  Here is a simple =Point= class that keeps track of an ~x~
-   and ~y~ position.
+** Class Constructors
+#+cindex:constructors
+All classes in TypeScript have a constructor, whether you specify one
+or not.  If you leave out the constructor, the compiler will
+automatically add one.
 
-   #+begin_src js -n
-  class Point {
-      public x: number;
-      public y: number;
-      constructor(x: number, y = 0) {
-          this.x = x;
-          this.y = y;
-      }
-  }
-   #+end_src
+For a class that doesn’t inherit from another class, the automatic
+constructor will be parameterless and will initialize any class
+properties.  Where the class extends another class, the automatic
+constructor will match the superclass signature and will pass
+arguments to the superclass before initializing any of its own
+properties.
 
-   This example includes a default value for the property ~y~.
-   TypeScript treats parameters with default values as optional
-   parameters.  This provides a simple method for ensuring you are always
-   operating on instantiated objects.
+If you prefix a constructor parameter with an access modifier, such as
+=private=, it will automatically be mapped for you.  You can refer to
+these constructor parameters as if they were declared as properties on
+the class;
 
-   Here is the JavaScript output for the =Point= class:
+** Class and Instance Properties and Methods
 
-   #+begin_src js -n
-     var Point = (function () {
-	 function Point(x, y) {
-	     if (typeof y == "undefined") { y = 0; }
-	     this.x = x;
-	     this.y = y;
-	 }
-	 return Point;
-     })();
-   #+end_src
+*** Instance Properties
+#+cindex:instance properties
+Instance properties are typically declared before the constructor in a
+TypeScript class.  A property definition consists of two to four parts:
 
-*** TypeScript Classes and JavaScript Closures
-   #+cindex:closures
-   Public methods and and static members will be added to the =Point=
-   function's prototype.  Classes, modules, and enums in TypeScript all
-   compile into JavaScript closures.  Closures are a JavaScript construct
-   that provide a way of creating a private state for a specific segment
-   of code.  When a closure is created, it contains two things:
-
-   - a function; and
-   - the state of the environment when the function was created.
+- an optional access modifier;
+- the identifier;
+- a type annotation
+- You can also initialize the property with a value
 
 
-   The function is returned to the caller of the closure and the state is
-   used when the function is called.
+: public name: string = "John";
 
-*** How Interfaces and Classes Interact
-Classes can optionally inherit type information from interfaces using
-the ~implements~ keyword.  The class will then be required to
-implement all of the interface members.  Note that decorating the
-constructor's parameters with ~public~ or ~private~ keywords tells
-TypeScript to treat those objects as part of the type and not just
-initialization parameters.
+When your program is compiled, the property initializers are moved
+into the top of the constructor, so they run before any code you place
+in the constructor.
 
-Providing a comma-separated list of interfaces after the ~implements~
-keyword allows the class to provide implementations of a variety of
-different contracts.
+Instance properties can be accessed from within the class using the
+~this~ keyword.  If the property is public it can be accessed using
+the instance name.
+
+*** Static Properties
+#+cindex:static properties
+You can also add static properties to your class, which are defined in
+the same way as instance properties, but with the ~static~ keyword
+between the access modifier (if one is specified) and the identifier.
+Static properties are accessed using the class name; this is because
+the property is not defined on each instance.
 
 #+begin_src js -n
-  interface IPoint {
-      x: number;
-      y: number;
+  static Compare(p1: Point, p2: Point): number {
+      return p1.Compare(p2);
   }
+#+end_src
 
-  interface ICompare {
-      Compare(p2: IPoint): number
-  }
+This ~Compare~ method is put directly on the =Point= object being
+created:
 
-  class Point implements IPoint, ICompare {
-      constructor(public x: number, public y = 0) {
+#+begin_src js -n
+  var Point = (function () {
+      function Point(x, y) {
+	  ...
       }
-      public Compare(p2: IPoint):number {
-	      // <return 0, 1, or -1>
+      Point.prototype.Compare = function(p2) {
+	  ...
       }
-  }
+      Point.Compare = function(p1, p2) {
+	  return p1.Compare(p2);
+      }
+      return Point;
+  })();
 #+end_src
 
-Keeping the interfaces simple allows them to be more reusable across
-applications.  The ~Compare~ method could easily have been placed on
-the IPoint interface to achieve the same result.  However, any number
-of types could implement the ICompare interface, which have no need
-for the members ~x~ and ~y~.
-
-** A Simple Class-Based Example
-#+cindex:ECMAScript 2015
-#+cindex:class-based construction
-Starting with ECMAScript 2015, also known as ECMAScript 6, JavaScript
-programmers will be able to build their applications using this
-object-oriented class-based approach.  In TypeScript, we allow
-developers to use these techniques now, and compile them down to
-JavaScript that works across all major browsers and platforms, without
-having to wait for the next version of JavaScript.
-
-Let’s take a look at a simple class-based example:
+In this example, we use =static= on the origin, as it’s a general
+value for all grids.  Each instance accesses this value through
+prepending the name of the class.  Similarly to prepending ~this~ in
+front of instance accesses, here we prepend =Grid.= in front of static
+accesses.
 
 #+begin_src js
-class Greeter {
-    greeting: string;
-    constructor(message: string) {
-        this.greeting = message;
+class Grid {
+    static origin = {x: 0, y: 0};
+    calculateDistanceFromOrigin(point: {x: number; y: number;}) {
+        let xDist = (point.x - Grid.origin.x);
+        let yDist = (point.y - Grid.origin.y);
+        return Math.sqrt(xDist * xDist + yDist * yDist) / this.scale;
     }
-    greet() {
-        return "Hello, " + this.greeting;
-    }
+    constructor (public scale: number) { }
 }
 
-let greeter = new Greeter("world");
+let grid1 = new Grid(1.0);  // 1x scale
+let grid2 = new Grid(5.0);  // 5x scale
+
+console.log(grid1.calculateDistanceFromOrigin({x: 10, y: 10}));
+console.log(grid2.calculateDistanceFromOrigin({x: 10, y: 10}));
 #+end_src
 
-We declare a new class =Greeter=.  This class has three members: a
-property called =greeting=, a constructor, and a method =greet=.
+*** Read-Only Properties
+#+cindex:readonly properties
+You can make both static and instance properties read-only to prevent
+the values being overwritten.
 
-#+cindex:@code{this}
-You’ll notice that in the class when we refer to one of the members of
-the class we prepend =this=.  This denotes that it’s a member access.
-
-In the last line we construct an instance of the =Greeter= class using
-~new~.  This calls into the constructor we defined earlier, creating a
-new object with the =Greeter= shape, and running the constructor to
-initialize it.
-
-** Inheritance
-#+cindex:inheritance
-#+cindex:extend
-#+cindex:class-based programming
-In TypeScript, we can use common object-oriented patterns.  One of the
-most fundamental patterns in class-based programming is being able to
-extend existing classes to create new ones using inheritance.
-
-Let’s take a look at an example:
+#+cindex:@code{readonly} keyword
+#+cindex:property, @code{readonly}
+You can make properties =readonly= by using the =readonly= keyword.
+=Readonly= properties must be initialized at their declaration or in
+the constructor.
 
 #+begin_src js
-class Animal {
-    move(distanceInMeters: number = 0) {
-        console.log(`Animal moved ${distanceInMeters}m.`);
+class Octopus {
+    readonly name: string;
+    readonly numberOfLegs: number = 8;
+    constructor (theName: string) {
+        this.name = theName;
     }
 }
-
-class Dog extends Animal {
-    bark() {
-        console.log('Woof! Woof!');
-    }
-}
-
-const dog = new Dog();
-dog.bark();
-dog.move(10);
-dog.bark();
+let dad = new Octopus("Man with the 8 strong legs");
+dad.name = "Man with the 3-piece suit"; // error! name is readonly.
 #+end_src
 
-#+cindex:derived class
-#+cindex:base class
-#+cindex:@code{extends} keyword
-#+cindex:subclass
-#+cindex:superclass
-This example shows the most basic inheritance feature: classes inherit
-properties and methods from base classes.  Here, =Dog= is a derived
-class that derives from the =Animal= base class using the ~extends~
-keyword.  Derived classes are often called subclasses, and base classes
-are often called superclasses.
+{{{heading(Parameter Properties)}}}
 
-Because =Dog= extends the functionality from =Animal=, we were able to
-create an instance of =Dog= that could both ~bark()~ and ~move()~.
-
-Let’s now look at a more complex example.
+#+cindex:parameter property
+In our last example, we had to declare a =readonly= member =name= and
+a constructor parameter =theName= in the =Octopus= class.  This is
+needed in order to have the value of =theName= accessible after the
+=Octopus= constructor is executed.  Parameter properties let you create
+and initialize a member in one place.  Here’s a further revision of the
+previous =Octopus= class using a parameter property:
 
 #+begin_src js
-class Animal {
-    name: string;
-    constructor(theName: string) { this.name = theName; }
-    move(distanceInMeters: number = 0) {
-        console.log(`${this.name} moved ${distanceInMeters}m.`);
+class Octopus {
+    readonly numberOfLegs: number = 8;
+    constructor(readonly name: string) {
     }
 }
-
-class Snake extends Animal {
-    constructor(name: string) { super(name); }
-    move(distanceInMeters = 5) {
-        console.log("Slithering...");
-        super.move(distanceInMeters);
-    }
-}
-
-class Horse extends Animal {
-    constructor(name: string) { super(name); }
-    move(distanceInMeters = 45) {
-        console.log("Galloping...");
-        super.move(distanceInMeters);
-    }
-}
-
-let sam = new Snake("Sammy the Python");
-let tom: Animal = new Horse("Tommy the Palomino");
-
-sam.move();
-tom.move(34);
 #+end_src
 
-This example covers a few other features we didn’t previously
-mention.  Again, we see the ~extends~ keywords used to create two new
-subclasses of =Animal=: =Horse= and =Snake=.
+Notice how we dropped =theName= altogether and just use the shortened
+=readonly= =name: string= parameter on the constructor to create and
+initialize the =name= member.  We’ve consolidated the declarations and
+assignment into one location.
 
-#+cindex:@code{super()}
-#+cindex:constructor function
-One difference from the prior example is that each derived class that
-contains a constructor function must call ~super()~ which will execute
-the constructor of the base class.  What’s more, before we ever access
-a property on ~this~ in a constructor body, we have to call ~super()~.
-This is an important rule that TypeScript will enforce.
+Parameter properties are declared by prefixing a constructor parameter
+with an accessibility modifier or =readonly=, or both.  Using
+=private= for a parameter property declares and initializes a
+=private= member; likewise, the same is done for =public=,
+=protected=, and =readonly=.
 
-#+cindex:override methods
-The example also shows how to override methods in the base class with
-methods that are specialized for the subclass.  Here both =Snake= and
-=Horse= create a ~move~ method that overrides the ~move~ from
-=Animal=, giving it functionality specific to each class.  Note that
-even though ~tom~ is declared as an =Animal=, since its value is a
-=Horse=, calling ~tom.move(34)~ will call the overriding method in
-=Horse=:
+*** Instance Member Functions
+#+cindex:methods
+Methods are defined a lot like functions, but they leave out the
+~function~ keyword.  You can annotate a method with all the parameters
+and return value type annotations that were discussed earlier in the
+section on functions.  You can prefix the method name with an access
+modifier to control its visibility, which is public by default.  Just
+as with instance properties, methods can be accessed from within the
+class using the ~this~ keyword; and if they are public they can be
+accessed outside of the class using the instance name.
 
-#+begin_example
-Slithering...
-Sammy the Python moved 5m.
-Galloping...
-Tommy the Palomino moved 34m.
-#+end_example
+You can create static methods by prefixing the method name with the
+~static~ keyword.  Static members can be called even when no instance
+of the class has been created and only a single instance of each
+static member exists in your program.  All static members are accessed
+via the class name and not an instance name and static members have no
+access to nonstatic properties or methods.
 
-** Instance Member Functions
+#+cindex:instance member methods
 Instance member functions are only available to an instance of the
 object of the type and they have access to the ~this~ object that
 allows easy access to all of an object's members.  In JavaScript there
@@ -4809,7 +4746,35 @@ constructor's prototype.
       })();
 #+end_src
 
-** Public Private Protected Modifiers
+*** Access Modifiers
+
+#+cindex:access modifiers
+#+cindex:private
+#+cindex:protected
+#+cindex:pubic
+Access modifiers are a key component of encapsulation.  Access
+modifiers change the visibility of class members.  There are three
+access modifiers available in TypeScript:
+
+- private :: The =private= modifier restricts the visibility to the
+             same-class only.  When you use the =private= modifier on
+             a member, it won’t appear in autocompletion (which is a
+             strong hint that you can’t use it) and attempts to access
+             the member from outside the class will result in a
+             compiler error.  You cannot even access the member from a
+             subclass.
+
+- protected :: The =protected= modifier allows the member to be used
+               within the same-class, and within subclasses.  Access
+               from anywhere else is not allowed.
+
+- public :: The =public= modifier, which is the default for class
+            members, allows access from all locations.  It is not
+            necessary to specify the =public= keyword on a property or
+            method unless you want to be explicit --- but you will
+            need to add it to constructor parameters to have them
+            mapped to properties automatically.
+
 {{{heading(Public by Default)}}}
 
 In our examples, we’ve been able to freely access the members that we
@@ -4959,56 +4924,7 @@ let howard = new Employee("Howard", "Sales");
 let john = new Person("John"); // Error: The 'Person' constructor is protected
 #+end_src
 
-** Readonly Modifier
-
-#+cindex:@code{readonly} keyword
-#+cindex:property, @code{readonly}
-You can make properties =readonly= by using the =readonly= keyword.
-=Readonly= properties must be initialized at their declaration or in
-the constructor.
-
-#+begin_src js
-class Octopus {
-    readonly name: string;
-    readonly numberOfLegs: number = 8;
-    constructor (theName: string) {
-        this.name = theName;
-    }
-}
-let dad = new Octopus("Man with the 8 strong legs");
-dad.name = "Man with the 3-piece suit"; // error! name is readonly.
-#+end_src
-
-{{{heading(Parameter Properties)}}}
-
-#+cindex:parameter property
-In our last example, we had to declare a =readonly= member =name= and
-a constructor parameter =theName= in the =Octopus= class.  This is
-needed in order to have the value of =theName= accessible after the
-=Octopus= constructor is executed.  Parameter properties let you create
-and initialize a member in one place.  Here’s a further revision of the
-previous =Octopus= class using a parameter property:
-
-#+begin_src js
-class Octopus {
-    readonly numberOfLegs: number = 8;
-    constructor(readonly name: string) {
-    }
-}
-#+end_src
-
-Notice how we dropped =theName= altogether and just use the shortened
-=readonly= =name: string= parameter on the constructor to create and
-initialize the =name= member.  We’ve consolidated the declarations and
-assignment into one location.
-
-Parameter properties are declared by prefixing a constructor parameter
-with an accessibility modifier or =readonly=, or both.  Using
-=private= for a parameter property declares and initializes a
-=private= member; likewise, the same is done for =public=,
-=protected=, and =readonly=.
-
-** Property Accessors
+*** Property Accessors
 #+cindex:Properties
 #+cindex:ECMAScript 5
 #+cindex:getter
@@ -5022,6 +4938,13 @@ TypeScript compiler must be set to emit ECMAScript 5 code, and then
 you will be able to use the =get= and =set= keywords to define
 properties.  Since getters and setters are method calls, they allow
 the programmer to verify constraints placed on instance members.
+
+TypeScript supports property getters and setters, if you are targeting
+ECMAScript 5 or above.  The syntax for these is identical to method
+signatures as described in the following, except they are prefixed by
+either the ~get~ or ~set~ keyword.  Property getters and setters allow
+you to wrap property access with a method while preserving the
+appearance of a simple property to the calling code.
 
 #+begin_src js -n
   interface IBounds {
@@ -5132,60 +5055,239 @@ A couple of things to note about accessors:
   ~.d.ts~ file from your code, because users of your property can see
   that they can’t change it.
 
-** Static Properties
-#+cindex:static properties
-We can also create static members of a class, those that are visible
-on the class itself rather than on the instances.  Static members are
-accessible at any time by referencing the named type.  To declare a
-static member, simply declare it with the ~static~ keyword.
+** Creating Classes
+   #+cindex:classes
+   Creating classes in Typescript is essentially the same as creating
+   interfaces.  Here is a simple =Point= class that keeps track of an ~x~
+   and ~y~ position.
+
+   #+begin_src js -n
+  class Point {
+      public x: number;
+      public y: number;
+      constructor(x: number, y = 0) {
+          this.x = x;
+          this.y = y;
+      }
+  }
+   #+end_src
+
+   This example includes a default value for the property ~y~.
+   TypeScript treats parameters with default values as optional
+   parameters.  This provides a simple method for ensuring you are always
+   operating on instantiated objects.
+
+   Here is the JavaScript output for the =Point= class:
+
+   #+begin_src js -n
+     var Point = (function () {
+	 function Point(x, y) {
+	     if (typeof y == "undefined") { y = 0; }
+	     this.x = x;
+	     this.y = y;
+	 }
+	 return Point;
+     })();
+   #+end_src
+
+*** TypeScript Classes and JavaScript Closures
+   #+cindex:closures
+   Public methods and and static members will be added to the =Point=
+   function's prototype.  Classes, modules, and enums in TypeScript all
+   compile into JavaScript closures.  Closures are a JavaScript construct
+   that provide a way of creating a private state for a specific segment
+   of code.  When a closure is created, it contains two things:
+
+   - a function; and
+   - the state of the environment when the function was created.
+
+
+   The function is returned to the caller of the closure and the state is
+   used when the function is called.
+
+*** How Interfaces and Classes Interact
+Classes can optionally inherit type information from interfaces using
+the ~implements~ keyword.  The class will then be required to
+implement all of the interface members.  Note that decorating the
+constructor's parameters with ~public~ or ~private~ keywords tells
+TypeScript to treat those objects as part of the type and not just
+initialization parameters.
+
+Providing a comma-separated list of interfaces after the ~implements~
+keyword allows the class to provide implementations of a variety of
+different contracts.
 
 #+begin_src js -n
-  static Compare(p1: Point, p2: Point): number {
-      return p1.Compare(p2);
+  interface IPoint {
+      x: number;
+      y: number;
+  }
+
+  interface ICompare {
+      Compare(p2: IPoint): number
+  }
+
+  class Point implements IPoint, ICompare {
+      constructor(public x: number, public y = 0) {
+      }
+      public Compare(p2: IPoint):number {
+	      // <return 0, 1, or -1>
+      }
   }
 #+end_src
 
-This ~Compare~ method is put directly on the =Point= object being
-created:
+Keeping the interfaces simple allows them to be more reusable across
+applications.  The ~Compare~ method could easily have been placed on
+the IPoint interface to achieve the same result.  However, any number
+of types could implement the ICompare interface, which have no need
+for the members ~x~ and ~y~.
 
-#+begin_src js -n
-  var Point = (function () {
-      function Point(x, y) {
-	  ...
-      }
-      Point.prototype.Compare = function(p2) {
-	  ...
-      }
-      Point.Compare = function(p1, p2) {
-	  return p1.Compare(p2);
-      }
-      return Point;
-  })();
-#+end_src
+** A Simple Class-Based Example
+#+cindex:ECMAScript 2015
+#+cindex:class-based construction
+Starting with ECMAScript 2015, also known as ECMAScript 6, JavaScript
+programmers will be able to build their applications using this
+object-oriented class-based approach.  In TypeScript, we allow
+developers to use these techniques now, and compile them down to
+JavaScript that works across all major browsers and platforms, without
+having to wait for the next version of JavaScript.
 
-In this example, we use =static= on the origin, as it’s a general
-value for all grids.  Each instance accesses this value through
-prepending the name of the class.  Similarly to prepending ~this~ in
-front of instance accesses, here we prepend =Grid.= in front of static
-accesses.
+Let’s take a look at a simple class-based example:
 
 #+begin_src js
-class Grid {
-    static origin = {x: 0, y: 0};
-    calculateDistanceFromOrigin(point: {x: number; y: number;}) {
-        let xDist = (point.x - Grid.origin.x);
-        let yDist = (point.y - Grid.origin.y);
-        return Math.sqrt(xDist * xDist + yDist * yDist) / this.scale;
+class Greeter {
+    greeting: string;
+    constructor(message: string) {
+        this.greeting = message;
     }
-    constructor (public scale: number) { }
+    greet() {
+        return "Hello, " + this.greeting;
+    }
 }
 
-let grid1 = new Grid(1.0);  // 1x scale
-let grid2 = new Grid(5.0);  // 5x scale
-
-console.log(grid1.calculateDistanceFromOrigin({x: 10, y: 10}));
-console.log(grid2.calculateDistanceFromOrigin({x: 10, y: 10}));
+let greeter = new Greeter("world");
 #+end_src
+
+We declare a new class =Greeter=.  This class has three members: a
+property called =greeting=, a constructor, and a method =greet=.
+
+#+cindex:@code{this}
+You’ll notice that in the class when we refer to one of the members of
+the class we prepend =this=.  This denotes that it’s a member access.
+
+In the last line we construct an instance of the =Greeter= class using
+~new~.  This calls into the constructor we defined earlier, creating a
+new object with the =Greeter= shape, and running the constructor to
+initialize it.
+
+** Inheritance---Class Heritage
+There are two types of class heritage in TypeScript.  A class can
+implement an interface using the ~implements~ keyword and a class can
+inherit from another class using the ~extends~ keyword.
+
+#+cindex:inheritance
+#+cindex:extend
+#+cindex:class-based programming
+In TypeScript, we can use common object-oriented patterns.  One of the
+most fundamental patterns in class-based programming is being able to
+extend existing classes to create new ones using inheritance.
+
+Let’s take a look at an example:
+
+#+begin_src js
+class Animal {
+    move(distanceInMeters: number = 0) {
+        console.log(`Animal moved ${distanceInMeters}m.`);
+    }
+}
+
+class Dog extends Animal {
+    bark() {
+        console.log('Woof! Woof!');
+    }
+}
+
+const dog = new Dog();
+dog.bark();
+dog.move(10);
+dog.bark();
+#+end_src
+
+#+cindex:derived class
+#+cindex:base class
+#+cindex:@code{extends} keyword
+#+cindex:subclass
+#+cindex:superclass
+This example shows the most basic inheritance feature: classes inherit
+properties and methods from base classes.  Here, =Dog= is a derived
+class that derives from the =Animal= base class using the ~extends~
+keyword.  Derived classes are often called subclasses, and base classes
+are often called superclasses.
+
+Because =Dog= extends the functionality from =Animal=, we were able to
+create an instance of =Dog= that could both ~bark()~ and ~move()~.
+
+Let’s now look at a more complex example.
+
+#+begin_src js
+class Animal {
+    name: string;
+    constructor(theName: string) { this.name = theName; }
+    move(distanceInMeters: number = 0) {
+        console.log(`${this.name} moved ${distanceInMeters}m.`);
+    }
+}
+
+class Snake extends Animal {
+    constructor(name: string) { super(name); }
+    move(distanceInMeters = 5) {
+        console.log("Slithering...");
+        super.move(distanceInMeters);
+    }
+}
+
+class Horse extends Animal {
+    constructor(name: string) { super(name); }
+    move(distanceInMeters = 45) {
+        console.log("Galloping...");
+        super.move(distanceInMeters);
+    }
+}
+
+let sam = new Snake("Sammy the Python");
+let tom: Animal = new Horse("Tommy the Palomino");
+
+sam.move();
+tom.move(34);
+#+end_src
+
+This example covers a few other features we didn’t previously
+mention.  Again, we see the ~extends~ keywords used to create two new
+subclasses of =Animal=: =Horse= and =Snake=.
+
+#+cindex:@code{super()}
+#+cindex:constructor function
+One difference from the prior example is that each derived class that
+contains a constructor function must call ~super()~ which will execute
+the constructor of the base class.  What’s more, before we ever access
+a property on ~this~ in a constructor body, we have to call ~super()~.
+This is an important rule that TypeScript will enforce.
+
+#+cindex:override methods
+The example also shows how to override methods in the base class with
+methods that are specialized for the subclass.  Here both =Snake= and
+=Horse= create a ~move~ method that overrides the ~move~ from
+=Animal=, giving it functionality specific to each class.  Note that
+even though ~tom~ is declared as an =Animal=, since its value is a
+=Horse=, calling ~tom.move(34)~ will call the overriding method in
+=Horse=:
+
+#+begin_example
+Slithering...
+Sammy the Python moved 5m.
+Galloping...
+Tommy the Palomino moved 34m.
+#+end_example
 
 ** Abstract Classes
 #+cindex:abstract class
