@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-26 11:01
-#+macro:version 0.0.56
+#+date:2019-11-26 15:51
+#+macro:version 0.0.57
 
 #+texinfo:@insertcopying
 
@@ -7998,7 +7998,7 @@ related packages:
 
 #+name:install-proj-dependencies
 #+begin_src sh :dir react/proj :results output :exports both
-yarn add --dev webpack wepback-cli typescript ts-loader source-map-loader
+yarn add --dev webpack webpack-cli typescript ts-loader source-map-loader
 #+end_src
 
 Next, install React, React-DOM, and their TypeScript types:
@@ -8025,7 +8025,7 @@ your project root named ~tsconfig.json~ and fill it with the following
 contents:
 
 #+name:add-tsconfig.json
-#+header: :results output :exports both
+#+header: :results output :exports both :mkdirp yes
 #+begin_src js -n :tangle react/proj/tsconfig.json
   {
       "compilerOptions": {
@@ -8044,8 +8044,8 @@ First, create a file named ~Hello.tsx~ in ~src/components~ and write
 the following:
 
 #+name:create-Hello.tsx
-#+header: :results output :exports both
-#+begin_src js -n :tangle react/proj/src/Hello.tsx
+#+header: :results output :exports both :mkdirp yes
+#+begin_src js -n :tangle react/proj/src/components/Hello.tsx
   import * as React from "react";
 
   export interface HelloProps { compiler: string; framework: string; }
@@ -8193,7 +8193,7 @@ Just run:
 #+name:run-project
 #+header: :results output :exports both :dir react/proj
 #+begin_src sh
-yarn wepback
+yarn webpack
 #+end_src
 
 and open up ~index.html~ in a browser.  You should see a page that
@@ -8278,7 +8278,7 @@ Format options can be specified in multiple ways.
 #+name:Makefile
 #+begin_src makefile -n :tangle Makefile
 SOURCE=TypeScript-Guide
-DIRS = examples
+DIRS = examples react src
 
 info:	$(SOURCE).texi
 	makeinfo $(SOURCE).texi
