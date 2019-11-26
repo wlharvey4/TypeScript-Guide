@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-26 10:27
-#+macro:version 0.0.54
+#+date:2019-11-26 10:45
+#+macro:version 0.0.55
 
 #+texinfo:@insertcopying
 
@@ -7956,7 +7956,6 @@ See a [[https://www.typescriptlang.org/play/index.html?jsx=2&esModuleInterop=tru
 
 See [[https://github.com/typescript-cheatsheets/react-typescript-cheatsheet#reacttypescript-cheatsheets][React + TypeScript Cheatsheets]]
 
-
 *** Laying Out the Project
 Start with a new directory, for example: ~proj/~.
 
@@ -8003,6 +8002,173 @@ that you could also use ~awesome-typescript-loader~.
 inform webpack when generating its own sourcemaps.  This will allow
 you to debug your final output file as if you were debugging your
 original TypeScript source code.
+
+*** Adding a TypeScript Configuration File
+Create a ~tsconfig.json~ file, which contains a list of your input
+files as well as all your compilation settings.  Create a new file in
+your project root named ~tsconfig.json~ and fill it with the following
+contents:
+
+#+begin_src js -n
+  {
+      "compilerOptions": {
+          "outDir": "./dist/",
+          "sourceMap": true,
+          "noImplicitAny": true,
+          "module": "commonjs",
+          "target": "es6",
+          "jsx": "react"
+      }
+  }
+#+end_src
+*** Writing Some Code
+First, create a file named ~Hello.tsx~ in ~src/components~ and write
+the following:
+
+#+begin_src js -n
+  import * as React from "react";
+
+  export interface HelloProps { compiler: string; framework: string; }
+
+  export const Hello = (props: HelloProps) => <h1>Hello from {props.compiler} and {props.framework}!</h1>;
+#+end_src
+
+Note that while this example uses function components, we could also
+make our example a little classier as well.
+
+#+begin_src js -n
+  import * as React from "react";
+
+  export interface HelloProps { compiler: string; framework: string; }
+
+  // 'HelloProps' describes the shape of props.
+  // State is never set so we use the '{}' type.
+  export class Hello extends React.Component<HelloProps, {}> {
+      render() {
+          return <h1>Hello from {this.props.compiler} and {this.props.framework}!</h1>;
+      }
+  }
+#+end_src
+
+Next, let’s create an ~index.tsx~ in ~src/~ with the following source:
+
+#+begin_src js +n
+  import * as React from "react";
+  import * as ReactDOM from "react-dom";
+
+  import { Hello } from "./components/Hello";
+
+  ReactDOM.render(
+      <Hello compiler="TypeScript" framework="React" />,
+      document.getElementById("example")
+  );
+#+end_src
+
+We just imported our =Hello= component into ~index.tsx~.  Notice that
+unlike with "react" or "react-dom", we used a relative path to
+~Hello.tsx~ --- this is important.  If we hadn’t, TypeScript would’ve
+instead tried looking in our ~node_modules~ folder.
+
+We’ll also need a page to display our Hello component.  Create a file
+at the root of ~proj/~ named ~index.html~ with the following contents:
+
+#+begin_src html -n
+  <!DOCTYPE html>
+  <html>
+      <head>
+          <meta charset="UTF-8" />
+          <title>Hello React!</title>
+      </head>
+      <body>
+          <div id="example"></div>
+
+          <!-- Dependencies -->
+          <script src="./node_modules/react/umd/react.development.js"></script>
+          <script src="./node_modules/react-dom/umd/react-dom.development.js"></script>
+
+          <!-- Main -->
+          <script src="./dist/main.js"></script>
+      </body>
+  </html>
+#+end_src
+
+Notice that we’re including files from within ~node_modules~.  React
+and React-DOM’s npm packages include standalone ~.js~ files that you
+can include in a web page, and we’re referencing them directly to get
+things moving faster.  Feel free to copy these files to another
+directory, or alternatively, host them on a content delivery network
+(CDN).  Facebook makes CDN-hosted versions of React available, and you
+can read more about that [[http://facebook.github.io/react/downloads.html#development-vs.-production-builds][here]].
+
+*** Creating a Webpack Configuration File
+Create a ~webpack.config.js~ file at the root of the project
+directory.
+
+#+begin_src js -n
+  module.exports = {
+      mode: "production",
+
+      // Enable sourcemaps for debugging webpack's output.
+      devtool: "source-map",
+
+      resolve: {
+          // Add '.ts' and '.tsx' as resolvable extensions.
+          extensions: [".ts", ".tsx"]
+      },
+
+      module: {
+          rules: [
+              {
+                  test: /\.ts(x?)$/,
+                  exclude: /node_modules/,
+                  use: [
+                      {
+                          loader: "ts-loader"
+                      }
+                  ]
+              },
+              // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
+              {
+                  enforce: "pre",
+                  test: /\.js$/,
+                  loader: "source-map-loader"
+              }
+          ]
+      },
+
+      // When importing a module whose path matches one of the following, just
+      // assume a corresponding global variable exists and use that instead.
+      // This is important because it allows us to avoid bundling all of our
+      // dependencies, which allows browsers to cache those libraries between builds.
+      externals: {
+          "react": "React",
+          "react-dom": "ReactDOM"
+      }
+  };
+#+end_src
+
+To avoid bundling all of React into the same file, which increases
+compilation time and browsers will typically be able to cache a
+library if it doesn't change, use the =externals= property and include
+React and React-DOM.
+
+Ideally, we’d just import the React module from within the browser,
+but most browsers still don’t quite support modules yet.  Instead
+libraries have traditionally made themselves available using a single
+global variable like jQuery or _.  This is called the “namespace
+pattern”, and webpack allows us to continue leveraging libraries
+written that way.  With our entry for "react": "React", webpack will
+work its magic to make any import of "react" load from the React
+variable.
+
+*** Running the Project
+Just run:
+
+: yarn wepback
+
+and open up ~index.html~ in a browser.  You should see a page that
+says “Hello from TypeScript and React!”
+
 ** Tide for Emacs
 =Tide= --- TypeScript Interactive Development Environment for Emacs
 
