@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-25 12:00
-#+macro:version 0.0.52
+#+date:2019-11-26 10:25
+#+macro:version 0.0.53
 
 #+texinfo:@insertcopying
 
@@ -7910,6 +7910,95 @@ $(document.body).ready(function(){
 </html>
 #+end_src
 
+** Using TypeScript with React
+- https://www.typescriptlang.org/docs/handbook/react-&-webpack.html
+
+
+This guide will teach you how to wire up TypeScript with React and
+webpack.
+
+If you’re starting a brand new project, take a look at the [[https://create-react-app.dev/docs/adding-typescript][React Quick
+Start guide]] first.
+
+*** Adding TypeScript to a React Project
+- https://create-react-app.dev/docs/adding-typescript/
+
+Note: this feature is available with react-scripts@2.1.0 and higher.
+
+**** Installation
+To start a new Create React App project with TypeScript, you can run:
+
+: yarn create react-app my-app --typescript
+
+To add TypeScript to a Create React App project, first install it:
+
+: yarn add typescript @types/node @types/react @types/react-dom @types/jest
+
+Next, rename any file to be a TypeScript file (e.g. ~src/index.js~ to
+~src/index.tsx~) and restart your development server!
+
+Type errors will show up in the same console as the build one.  You'll
+have to fix these type errors before you continue development or build
+your project.
+
+For advanced configuration, see [[https://create-react-app.dev/docs/advanced-configuration][here]].
+
+**** Getting Started
+You are not required to make a ~tsconfig.json~ file, as one will be
+made for you.  You are allowed to edit the generated TypeScript
+configuration.
+
+See a [[https://www.typescriptlang.org/play/index.html?jsx=2&esModuleInterop=true&e=196#example/typescript-with-react][TypeScript example in React]].
+
+See [[https://github.com/typescript-cheatsheets/react-typescript-cheatsheet#reacttypescript-cheatsheets][React + TypeScript Cheatsheets]]
+
+
+*** Laying Out the Project
+Start with a new directory, for example: ~proj/~.
+
+: mkdir proj && cd proj
+
+Structure the project like so:
+
+- proj/
+  - dist/
+  - src/
+    - components/
+
+
+TypeScript files will start out in your ~src/~ folder, run through the
+TypeScript compiler, then webpack, and end up in a ~main.js~ file in
+~dist/~.  Any components that we write will go in the
+~src/components/~ folder.
+
+: mkdir src && cd src && mkdir components && cd ..
+
+Webpack will create the ~dist/~ directory.
+
+*** Initializing the Project
+Turn this project into an NPM package:
+
+: yarn init -yp
+
+*** Installing the Project Dependencies
+First, install the development dependencies Webpack and TypeScript and
+related packages:
+
+: yarn add --dev webpack wepback-cli typescript ts-loader source-map-loader
+
+Next, install React, React-DOM, and their TypeScript types:
+
+: yarn add react react-dom
+: yarn add --dev @types/react @types/react-dom
+
+~ts-loader~ helps Webpack compile your TypeScript code using the
+TypeScript’s standard configuration file named ~tsconfig.json~.  Note
+that you could also use ~awesome-typescript-loader~.
+
+~source-map-loader~ uses any sourcemap outputs from TypeScript to
+inform webpack when generating its own sourcemaps.  This will allow
+you to debug your final output file as if you were debugging your
+original TypeScript source code.
 ** Tide for Emacs
 =Tide= --- TypeScript Interactive Development Environment for Emacs
 
