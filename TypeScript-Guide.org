@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-26 10:25
-#+macro:version 0.0.53
+#+date:2019-11-26 10:27
+#+macro:version 0.0.54
 
 #+texinfo:@insertcopying
 
@@ -1264,6 +1264,10 @@ TypeScript:
 - [[https://www.npmjs.com/package/ts-loader][ts-loader]] :: TypeScript loader for webpack
 
 - [[https://www.npmjs.com/package/awesome-typescript-loader][awesome-typescript-loader]] :: TypeScript loader for webpack
+
+
+For a description of some of the differences between the two, see
+- https://github.com/s-panferov/awesome-typescript-loader#differences-between-ts-loader
 
 
 {{{heading(Install Webpack)}}}
