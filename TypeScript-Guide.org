@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-26 10:45
-#+macro:version 0.0.55
+#+date:2019-11-26 11:01
+#+macro:version 0.0.56
 
 #+texinfo:@insertcopying
 
@@ -7959,7 +7959,10 @@ See [[https://github.com/typescript-cheatsheets/react-typescript-cheatsheet#reac
 *** Laying Out the Project
 Start with a new directory, for example: ~proj/~.
 
-: mkdir proj && cd proj
+#+name:create-proj-dir
+#+begin_src sh :results output :exports both
+mkdir -v react && mkdir proj && cd react/proj
+#+end_src
 
 Structure the project like so:
 
@@ -7974,25 +7977,37 @@ TypeScript compiler, then webpack, and end up in a ~main.js~ file in
 ~dist/~.  Any components that we write will go in the
 ~src/components/~ folder.
 
-: mkdir src && cd src && mkdir components && cd ..
+#+name:structure-proj
+#+begin_src sh :results output :exports both
+mkdir -v src && cd src && mkdir -v components && cd ..
+#+end_src
 
 Webpack will create the ~dist/~ directory.
 
 *** Initializing the Project
 Turn this project into an NPM package:
 
-: yarn init -yp
+#+name:initialize-proj
+#+begin_src sh :dir react/proj :results output :exports both
+yarn init -yp
+#+end_src
 
 *** Installing the Project Dependencies
 First, install the development dependencies Webpack and TypeScript and
 related packages:
 
-: yarn add --dev webpack wepback-cli typescript ts-loader source-map-loader
+#+name:install-proj-dependencies
+#+begin_src sh :dir react/proj :results output :exports both
+yarn add --dev webpack wepback-cli typescript ts-loader source-map-loader
+#+end_src
 
 Next, install React, React-DOM, and their TypeScript types:
 
-: yarn add react react-dom
-: yarn add --dev @types/react @types/react-dom
+#+name:install-react-react-dom-typescript-types
+#+begin_src sh :dir react/proj :results output :exports both
+yarn add react react-dom
+yarn add --dev @types/react @types/react-dom
+#+end_src
 
 ~ts-loader~ helps Webpack compile your TypeScript code using the
 TypeScript’s standard configuration file named ~tsconfig.json~.  Note
@@ -8009,7 +8024,9 @@ files as well as all your compilation settings.  Create a new file in
 your project root named ~tsconfig.json~ and fill it with the following
 contents:
 
-#+begin_src js -n
+#+name:add-tsconfig.json
+#+header: :results output :exports both
+#+begin_src js -n :tangle react/proj/tsconfig.json
   {
       "compilerOptions": {
           "outDir": "./dist/",
@@ -8021,11 +8038,14 @@ contents:
       }
   }
 #+end_src
+
 *** Writing Some Code
 First, create a file named ~Hello.tsx~ in ~src/components~ and write
 the following:
 
-#+begin_src js -n
+#+name:create-Hello.tsx
+#+header: :results output :exports both
+#+begin_src js -n :tangle react/proj/src/Hello.tsx
   import * as React from "react";
 
   export interface HelloProps { compiler: string; framework: string; }
@@ -8052,7 +8072,9 @@ make our example a little classier as well.
 
 Next, let’s create an ~index.tsx~ in ~src/~ with the following source:
 
-#+begin_src js +n
+#+name:create-index.tsx
+#+header: :results output :exports both
+#+begin_src js +n :tangle react/proj/src/index.tsx
   import * as React from "react";
   import * as ReactDOM from "react-dom";
 
@@ -8072,7 +8094,9 @@ instead tried looking in our ~node_modules~ folder.
 We’ll also need a page to display our Hello component.  Create a file
 at the root of ~proj/~ named ~index.html~ with the following contents:
 
-#+begin_src html -n
+#+name:create-index.html
+#+header: :results output :exports both
+#+begin_src html -n :tangle react/proj/index.html
   <!DOCTYPE html>
   <html>
       <head>
@@ -8104,7 +8128,9 @@ can read more about that [[http://facebook.github.io/react/downloads.html#develo
 Create a ~webpack.config.js~ file at the root of the project
 directory.
 
-#+begin_src js -n
+#+name:create-webpack-config-js
+#+header: :results output :exports both
+#+begin_src js -n :tangle react/proj/webpack.config.js
   module.exports = {
       mode: "production",
 
@@ -8164,7 +8190,11 @@ variable.
 *** Running the Project
 Just run:
 
-: yarn wepback
+#+name:run-project
+#+header: :results output :exports both :dir react/proj
+#+begin_src sh
+yarn wepback
+#+end_src
 
 and open up ~index.html~ in a browser.  You should see a page that
 says “Hello from TypeScript and React!”
