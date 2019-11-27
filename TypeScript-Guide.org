@@ -1,15 +1,26 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-26 15:51
-#+macro:version 0.0.57
+#+date:2019-11-27 09:49
+#+macro:version 0.0.58
 
 #+texinfo:@insertcopying
 
 * About TypeScript
+
+#+begin_src elisp :results silent :exports results
+(org-babel-tangle-file "TypeScript-Guide.org")
+#+end_src
+
 TypeScript is a superset of JavaScript that compiles to clean
 JavaScript output.
 
 - https://www.typescriptlang.org
+
+
+#+cindex:source
+TypeScript is being developed on GitHub and is open source.
+
+- https://github.com/Microsoft/TypeScript
 
 
 TypeScript involves the following concepts:
@@ -22,13 +33,7 @@ TypeScript involves the following concepts:
 - Modules
 - Generic Types
 
-** Source Code Repository
-#+cindex:source
-TypeScript is being developed on GitHub and is open source.
-
-- https://github.com/Microsoft/TypeScript
-
-** Gulp Installation
+** TypeScript Installation
 #+cindex:installation
 #+cindex:updating
 
@@ -43,6 +48,9 @@ yarn global add typescript
 #+end_src
 
 {{{heading(Adding TypeScript as a Local Development Dependency)}}}
+
+The preferred method of installing TypeScript is to install it as a
+development dependency in your project.
 
 #+name:local-installation
 #+option: :results output :exports none
