@@ -1,7 +1,7 @@
 #+title:TypeScript Guide
 #+author:Pinecone062
-#+date:2019-11-27 09:49
-#+macro:version 0.0.58
+#+date:2019-11-30 10:05
+#+macro:version 0.0.59
 
 #+texinfo:@insertcopying
 
@@ -5193,9 +5193,55 @@ new object with the =Greeter= shape, and running the constructor to
 initialize it.
 
 ** Inheritance---Class Heritage
+#+cindex:implement
+#+cindex:@code{implements} keyword
+#+cindex:inherit, inheritance
+#+cindex:@code{inherits} keyword
 There are two types of class heritage in TypeScript.  A class can
-implement an interface using the ~implements~ keyword and a class can
-inherit from another class using the ~extends~ keyword.
+/implement/ an interface using the ~implements~ keyword and a class
+can /inherit/ from another class using the ~extends~ keyword.
+
+{{{heading(Implementing an Interface)}}}
+
+#+cindex:implement an interface
+When you implement an interface, the ~implements~ declaration is
+entirely optional due to the structural types in TypeScript.  If you
+do specify the interface using the ~implements~ keyword, your class
+will be checked to ensure that it complies with the contract promised
+by the interface.  A class can implement multiple interfaces, with
+each interface being separated by a comma.  A method on a class can
+have fewer parameters than the interface specifies.  This allows a
+class to ignore arguments that it doesn’t require to execute the
+method. any parameters that are specified must match the parameters in
+the interface.
+
+{{{heading(Extending a Class)}}}
+
+#+cindex:extending a class
+#+cindex:@code{extends} keyword
+#+cindex:derived class
+#+cindex:class, derived
+#+cindex:base class
+#+cindex:class, base
+#+cindex:override
+You inherit from a class using the ~extends~ keyword.  An ~extends~
+clause makes your class a /derived/ class, and it will gain all the
+properties and methods of the base class from which it inherits.  You
+can /override/ a public member of the base class by adding a member of
+the same name and kind as the base class member.
+
+#+cindex:@code{super}
+If the subclass accepts additional arguments there are a couple of
+rules you need to follow.  The ~super~ call to the base class must be
+the first statement in the subclass constructor and you cannot specify
+a more restrictive access modifier for a parameter on the subclass
+than it has on the base class.  Further,
+
+- A class can only inherit from a single superclass.
+
+- A class cannot inherit from itself, either directly or via a chain
+  of inheritance.
+
 
 #+cindex:inheritance
 #+cindex:extend
